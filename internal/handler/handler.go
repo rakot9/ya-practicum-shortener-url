@@ -1,9 +1,12 @@
 package handler
 
 import (
+	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"io"
 	"net/http"
 )
+
+const URL = "http://localhost:8080/"
 
 func MainPage(res http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodPost {
@@ -25,7 +28,14 @@ func MainPage(res http.ResponseWriter, req *http.Request) {
 
 		res.Header().Set("Content-Type", "text/plain")
 		res.WriteHeader(http.StatusCreated)
-		res.Write([]byte(shortUrl))
+
+		suffix, err := service.Save(shortUrl)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		res.Write([]byte(URL + suffix))
 	} else {
 		http.Error(res, "Неверный http метод запроса", http.StatusMethodNotAllowed)
 	}
@@ -33,10 +43,16 @@ func MainPage(res http.ResponseWriter, req *http.Request) {
 
 func PageById(res http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodGet {
-		shortUrl := "Orig"
+
+		url, err := service.Find(req.PathValue("id"))
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusBadRequest)
+			return
+		}
+
 		res.Header().Set("Content-Type", "text/plain")
 		res.WriteHeader(http.StatusTemporaryRedirect)
-		res.Write([]byte(shortUrl))
+		res.Write([]byte(url))
 	} else {
 		http.Error(res, "Неверный http метод запроса", http.StatusMethodNotAllowed)
 	}
