@@ -6,7 +6,6 @@ import (
 )
 
 func MainPage(res http.ResponseWriter, req *http.Request) {
-	res.Write([]byte("Привет!"))
 	if req.Method == http.MethodPost {
 		if "text/plain" != req.Header.Get("Content-Type") {
 			http.Error(res, "Неверный http метод запроса", http.StatusMethodNotAllowed)
