@@ -50,9 +50,7 @@ func PageById(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		res.Header().Set("Content-Type", "text/plain")
-		res.WriteHeader(http.StatusTemporaryRedirect)
-		res.Write([]byte(url))
+		http.Redirect(res, req, url, http.StatusTemporaryRedirect)
 	} else {
 		http.Error(res, "Неверный http метод запроса", http.StatusMethodNotAllowed)
 	}
