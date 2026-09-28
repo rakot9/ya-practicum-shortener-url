@@ -28,7 +28,7 @@ func Save(Url string) (string, error) {
 		Url:     Url,
 	}
 
-	file, err := os.Create(STORAGE_FILE)
+	file, err := os.OpenFile(STORAGE_FILE, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		return "", fmt.Errorf("Ошибка создания файла хранилища: %s", err)
 	}
