@@ -6,10 +6,9 @@ import (
 )
 
 func main() {
-	// Запускаем роутер
-	router.Router()
+	router := router.Router()
 
-	err := http.ListenAndServe(`:8080`, nil)
+	err := http.ListenAndServe(`:8080`, router)
 	if err != nil {
 		panic(err)
 	}
