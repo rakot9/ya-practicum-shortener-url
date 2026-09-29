@@ -6,12 +6,17 @@ import (
 	"github.com/rakot9/ya-practicum-shortener-url/internal/handler"
 )
 
-func Router() chi.Router {
+func Router(flagRunAddr string, flagRunShorternerAddr string) chi.Router {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
+	flagEnv := &handler.FlagEnv{
+		FlagRunAddr:           flagRunAddr,
+		FlagRunShorternerAddr: flagRunShorternerAddr,
+	}
+
 	r.Get("/{id}", handler.PageById)
-	r.Post("/", handler.MainPage)
+	r.Post("/", handler.MainPage(flagEnv))
 
 	return r
 }
