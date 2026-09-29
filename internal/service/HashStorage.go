@@ -28,7 +28,7 @@ func Save(Url string) (string, error) {
 		Url:     Url,
 	}
 
-	file, err := os.OpenFile(STORAGE_FILE, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(STORAGE_FILE, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		return "", fmt.Errorf("Ошибка создания файла хранилища: %s", err)
 	}
@@ -46,7 +46,7 @@ func Save(Url string) (string, error) {
 
 func Find(hash string) (string, error) {
 
-	file, err := os.OpenFile(STORAGE_FILE, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(STORAGE_FILE, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 
 	if err != nil {
 		return "", err
