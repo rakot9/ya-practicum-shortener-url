@@ -46,7 +46,7 @@ func Save(Url string) (string, error) {
 
 func Find(hash string) (string, error) {
 
-	file, err := os.OpenFile(STORAGE_FILE, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	file, err := os.Open(STORAGE_FILE)
 
 	if err != nil {
 		return "", err
@@ -70,6 +70,7 @@ func Find(hash string) (string, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
+		fmt.Print("Error scanner")
 		return "", err
 	}
 

@@ -4,6 +4,7 @@ import (
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"io"
 	"net/http"
+	"strings"
 )
 
 type FlagEnv struct {
@@ -14,7 +15,7 @@ type FlagEnv struct {
 func MainPage(flagEnv *FlagEnv) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		if req.Method == http.MethodPost {
-			if "text/plain" != req.Header.Get("Content-Type") {
+			if !strings.Contains(req.Header.Get("Content-Type"), "text/plain") {
 				http.Error(res, "Неверный http метод запроса", http.StatusMethodNotAllowed)
 			}
 

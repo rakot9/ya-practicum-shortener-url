@@ -11,7 +11,7 @@ import (
 func main() {
 	config.ParseFlags()
 
-	router := router.Router(config.FlagRunAddr, config.FlagRunShorternerAddr)
+	router := router.Router(config.FlagRunAddr, config.FlagRunShorternerAddr, config.FlagLog)
 
 	if err := run(router); err != nil {
 		panic(err)
@@ -19,6 +19,10 @@ func main() {
 }
 
 func run(router chi.Router) error {
-	fmt.Println("Running server on", config.FlagRunAddr)
+
+	if config.FlagLog {
+		fmt.Println("Running server on", config.FlagRunAddr)
+	}
+
 	return http.ListenAndServe(config.FlagRunAddr, router)
 }
