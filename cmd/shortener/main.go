@@ -6,10 +6,11 @@ import (
 	"github.com/rakot9/ya-practicum-shortener-url/config"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/router"
 	"net/http"
+	"os"
 )
 
 func main() {
-	config.ParseFlags()
+	config.ParseFlags(os.Args[1:])
 
 	router := router.Router(config.FlagRunAddr, config.FlagRunShorternerAddr, config.FlagLog)
 
