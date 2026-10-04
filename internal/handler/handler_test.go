@@ -2,11 +2,13 @@ package handler
 
 import (
 	"fmt"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -25,26 +27,21 @@ func TestMainPage(t *testing.T) {
 	}
 
 	tests := []struct {
-		name   string
-		method string
-		want   want
+		name    string
+		method  string
+		request string
+		body    string
+		want    want
 	}{
 		{
-			name:   "[Negative] Проверка на http метод GET -> POST",
-			method: http.MethodGet,
+			name:    "Верный ответ",
+			method:  http.MethodPost,
+			request: "/",
+			body:    "http://n1qttzvbn3.yandex/arqay",
 			want: want{
-				code:        http.StatusMethodNotAllowed,
-				response:    `Неверный http метод запроса`,
+				code:        http.StatusCreated,
+				response:    "http://localhost:8080/4b90906a4f8dbe74fca39107f330b069",
 				contentType: "text/plain",
-			},
-		},
-		{
-			name:   "[Negative] Проверка на Content-Type",
-			method: http.MethodGet,
-			want: want{
-				code:        http.StatusMethodNotAllowed,
-				response:    `Неверный Content-Type`,
-				contentType: "application/json",
 			},
 		},
 	}
@@ -52,7 +49,8 @@ func TestMainPage(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 
 			response := httptest.NewRecorder()
-			request := httptest.NewRequest(test.method, "/", nil)
+			request := httptest.NewRequest(test.method, test.request, strings.NewReader(test.body))
+			request.Header.Set("Content-Type", "text/plain")
 
 			handler := MainPage(flagEnv)
 			handler.ServeHTTP(response, request)
@@ -82,43 +80,33 @@ func TestPageById(t *testing.T) {
 		contentType string
 	}
 
-	flagEnv := &FlagEnv{
-		FlagRunAddr:           "localhost:8080",
-		FlagRunShorternerAddr: "http://localhost:8080",
-	}
-
 	tests := []struct {
-		name   string
-		method string
-		want   want
+		name    string
+		method  string
+		request string
+		want    want
 	}{
 		{
-			name:   "[Negative] Проверка на http метод GET -> POST",
-			method: http.MethodGet,
+			name:    "Верный ответ",
+			method:  http.MethodGet,
+			request: "/4b90906a4f8dbe74fca39107f330b069",
 			want: want{
-				code:        http.StatusMethodNotAllowed,
-				response:    `Неверный http метод запроса`,
+				code:        http.StatusTemporaryRedirect,
+				response:    "http://n1qttzvbn3.yandex/arqay",
 				contentType: "text/plain",
-			},
-		},
-		{
-			name:   "[Negative] Проверка на Content-Type",
-			method: http.MethodGet,
-			want: want{
-				code:        http.StatusMethodNotAllowed,
-				response:    `Неверный Content-Type`,
-				contentType: "application/json",
 			},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 
-			response := httptest.NewRecorder()
-			request := httptest.NewRequest(test.method, "/", nil)
+			r := chi.NewRouter()
+			r.Get("/{id}", PageById)
 
-			handler := MainPage(flagEnv)
-			handler.ServeHTTP(response, request)
+			request := httptest.NewRequest(test.method, test.request, nil)
+			response := httptest.NewRecorder()
+
+			r.ServeHTTP(response, request)
 
 			res := response.Result()
 

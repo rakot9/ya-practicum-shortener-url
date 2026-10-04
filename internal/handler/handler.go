@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"fmt"
+	"github.com/go-chi/chi/v5"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"io"
 	"net/http"
@@ -16,7 +18,7 @@ func MainPage(flagEnv *FlagEnv) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		if req.Method == http.MethodPost {
 			if !strings.Contains(req.Header.Get("Content-Type"), "text/plain") {
-				http.Error(res, "Неверный http метод запроса", http.StatusMethodNotAllowed)
+				http.Error(res, "Неверный http метод запроса", http.StatusBadRequest)
 			}
 
 			req.Body = http.MaxBytesReader(res, req.Body, 1048576)
@@ -42,15 +44,18 @@ func MainPage(flagEnv *FlagEnv) http.HandlerFunc {
 
 			res.Write([]byte(flagEnv.FlagRunShorternerAddr + "/" + suffix))
 		} else {
-			http.Error(res, "Неверный http метод запроса", http.StatusMethodNotAllowed)
+			http.Error(res, "Неверный http метод запроса Main", http.StatusBadRequest)
+			return
 		}
 	}
 }
 
 func PageById(res http.ResponseWriter, req *http.Request) {
+	fmt.Print("### PageById ###")
 	if req.Method == http.MethodGet {
 
-		url, err := service.Find(req.PathValue("id"))
+		id := chi.URLParam(req, "id")
+		url, err := service.Find(id)
 		if err != nil {
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
@@ -58,6 +63,6 @@ func PageById(res http.ResponseWriter, req *http.Request) {
 
 		http.Redirect(res, req, url, http.StatusTemporaryRedirect)
 	} else {
-		http.Error(res, "Неверный http метод запроса", http.StatusMethodNotAllowed)
+		http.Error(res, "Неверный http метод запроса ById", http.StatusBadRequest)
 	}
 }
