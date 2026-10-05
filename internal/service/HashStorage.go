@@ -30,7 +30,7 @@ func Save(URL string) (string, error) {
 
 	file, err := os.OpenFile(StorageFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		return "", fmt.Errorf("Error create file storage: %s", err)
+		return "", fmt.Errorf("error create file storage: %s", err)
 	}
 	defer file.Close()
 
@@ -38,7 +38,7 @@ func Save(URL string) (string, error) {
 	_, err = fmt.Fprintf(file, "%s%s%s\n", data.HashURL, DELIMITER, data.URL)
 	if err != nil {
 		fmt.Println("Error write to file storage:", err)
-		return "", fmt.Errorf("Error write to file storage: %s", err)
+		return "", fmt.Errorf("error write to file storage: %s", err)
 	}
 
 	return Hash, nil
@@ -74,5 +74,5 @@ func Find(hash string) (string, error) {
 		return "", err
 	}
 
-	return "", fmt.Errorf("Key %s not found", hash)
+	return "", fmt.Errorf("key %s not found", hash)
 }
