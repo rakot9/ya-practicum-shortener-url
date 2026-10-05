@@ -9,36 +9,36 @@ import (
 	"strings"
 )
 
-const STORAGE_FILE = "storage.txt"
+const StorageFile = "storage.txt"
 const DELIMITER = ";"
 
 type Record struct {
-	HashUrl string
-	Url     string
+	HashURL string
+	URL     string
 }
 
 // Todo: сделать проверку на дубли
-func Save(Url string) (string, error) {
+func Save(URL string) (string, error) {
 
-	hash := md5.Sum([]byte(Url))
+	hash := md5.Sum([]byte(URL))
 	Hash := hex.EncodeToString(hash[:])
 
 	data := Record{
-		HashUrl: Hash,
-		Url:     Url,
+		HashURL: Hash,
+		URL:     URL,
 	}
 
-	file, err := os.OpenFile(STORAGE_FILE, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	file, err := os.OpenFile(StorageFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		return "", fmt.Errorf("Ошибка создания файла хранилища: %s", err)
+		return "", fmt.Errorf("Error create file storage: %s", err)
 	}
 	defer file.Close()
 
 	// Записываем поля структуры, разделяя их ; (%s;%s)
-	_, err = fmt.Fprintf(file, "%s%s%s\n", data.HashUrl, DELIMITER, data.Url)
+	_, err = fmt.Fprintf(file, "%s%s%s\n", data.HashURL, DELIMITER, data.URL)
 	if err != nil {
-		fmt.Println("Ошибка записи в файл хранилища:", err)
-		return "", fmt.Errorf("Ошибка записи в файл хранилища: %s", err)
+		fmt.Println("Error write to file storage:", err)
+		return "", fmt.Errorf("Error write to file storage: %s", err)
 	}
 
 	return Hash, nil
@@ -46,7 +46,7 @@ func Save(Url string) (string, error) {
 
 func Find(hash string) (string, error) {
 
-	file, err := os.Open(STORAGE_FILE)
+	file, err := os.Open(StorageFile)
 
 	if err != nil {
 		return "", err
@@ -74,5 +74,5 @@ func Find(hash string) (string, error) {
 		return "", err
 	}
 
-	return "", fmt.Errorf("ключ %s не найден", hash)
+	return "", fmt.Errorf("Key %s not found", hash)
 }

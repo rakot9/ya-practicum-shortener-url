@@ -101,7 +101,7 @@ func TestPageById(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 
 			r := chi.NewRouter()
-			r.Get("/{id}", PageById)
+			r.Get("/{id}", PageByID)
 
 			request := httptest.NewRequest(test.method, test.request, nil)
 			response := httptest.NewRecorder()

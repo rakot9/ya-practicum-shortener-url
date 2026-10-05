@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"io"
@@ -31,12 +30,12 @@ func MainPage(flagEnv *FlagEnv) http.HandlerFunc {
 
 			bodyText := string(bodyBytes)
 
-			shortUrl := bodyText
+			shortURL := bodyText
 
 			res.Header().Set("Content-Type", "text/plain")
 			res.WriteHeader(http.StatusCreated)
 
-			suffix, err := service.Save(shortUrl)
+			suffix, err := service.Save(shortURL)
 			if err != nil {
 				http.Error(res, err.Error(), http.StatusBadRequest)
 				return
@@ -50,8 +49,7 @@ func MainPage(flagEnv *FlagEnv) http.HandlerFunc {
 	}
 }
 
-func PageById(res http.ResponseWriter, req *http.Request) {
-	fmt.Print("### PageById ###")
+func PageByID(res http.ResponseWriter, req *http.Request) {
 	if req.Method == http.MethodGet {
 
 		id := chi.URLParam(req, "id")

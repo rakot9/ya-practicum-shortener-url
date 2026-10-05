@@ -18,7 +18,7 @@ func Router(flagRunAddr string, flagRunShorternerAddr string, flagLog bool) chi.
 		FlagRunShorternerAddr: flagRunShorternerAddr,
 	}
 
-	r.Get("/{id}", handler.PageById)
+	r.Get("/{id}", handler.PageByID)
 	r.Post("/", handler.MainPage(flagEnv))
 
 	return r
