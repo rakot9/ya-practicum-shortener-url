@@ -1,60 +1,62 @@
 package config
 
 import (
-	// "github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestParseFlags(t *testing.T) {
 	tests := []struct {
-		name string
-		args []string
-		want []string
+		name     string
+		args     []string
+		expected Flags
 	}{
 		{
+			name: "Проверка дефолтныз значений",
+			args: []string{},
+			expected: Flags{
+				FlagRunAddr:           "localhost:8080",
+				FlagRunShorternerAddr: "http://localhost:8080",
+				FlagLog:               false,
+			},
+		},
+		{
 			name: "Проверка флага -a",
-			args: []string{"-a", "localhost:8081"},
-			want: []string{"localhost:8081"},
+			args: []string{"-a=localhost:8081"},
+			expected: Flags{
+				FlagRunAddr:           "localhost:8081",
+				FlagRunShorternerAddr: "http://localhost:8080",
+				FlagLog:               false,
+			},
 		},
 		{
 			name: "Проверка флага -b",
-			args: []string{"-b", "http://localhost:8080"},
-			want: []string{"http://localhost:8080"},
+			args: []string{"-b=http://localhost:8081"},
+			expected: Flags{
+				FlagRunAddr:           "localhost:8080",
+				FlagRunShorternerAddr: "http://localhost:8081",
+				FlagLog:               false,
+			},
 		},
 		{
-			name: "Проверка отсутствия флагов",
-			args: []string{},
-			want: []string{"localhost:8080", "http://localhost:8080"},
+			name: "Проверка флага -a -b",
+			args: []string{"-a=localhost:8081", "-b=http://localhost:8081"},
+			expected: Flags{
+				FlagRunAddr:           "localhost:8081",
+				FlagRunShorternerAddr: "http://localhost:8081",
+				FlagLog:               false,
+			},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			flags := ParseFlags(tt.args)
 
-			if len(tt.args) == 0 {
-				if flags.FlagRunAddr != tt.want[0] || flags.FlagRunShorternerAddr != tt.want[1] {
-					t.Error("ParseFlags error default values")
-				}
+			if flags.FlagRunAddr != tt.expected.FlagRunAddr ||
+				flags.FlagRunShorternerAddr != tt.expected.FlagRunShorternerAddr ||
+				flags.FlagLog != tt.expected.FlagLog {
+				t.Errorf("got %+v, want %+v", flags, tt.expected)
 			}
-
-			if len(tt.args) == 2 {
-				t.Logf("### Flags %+v", flags)
-				if tt.args[0] == "-a" {
-					if flags.FlagRunAddr != tt.want[0] {
-						t.Error("ParseFlags error default values for 1 arguments with -a argument")
-					}
-				}
-				if tt.args[0] == "-b" {
-					if flags.FlagRunShorternerAddr != tt.want[0] {
-						t.Error("ParseFlags error default values for 1 arguments with -b argument")
-					}
-				}
-			}
-
-			// t.Logf("### Flags %+v", flags)
-			// if flags.FlagRunAddr != tt.want[0] || flags.FlagRunShorternerAddr != tt.want[1] {
-			// 	t.Error("ParseFlags with no arg")
-			// }
 		})
 	}
 }
