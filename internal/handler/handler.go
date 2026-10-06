@@ -43,7 +43,7 @@ func MainPage(flagEnv *FlagEnv) http.HandlerFunc {
 
 		suffix, err := s.Save(URLtoShorten)
 		if err != nil {
-			http.Error(res, err.Error(), http.StatusBadRequest)
+			http.Error(res, "server error", http.StatusInternalServerError)
 			return
 		}
 

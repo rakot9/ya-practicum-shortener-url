@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -84,12 +85,14 @@ func TestPageById(t *testing.T) {
 		name    string
 		method  string
 		request string
+		url     string
 		want    want
 	}{
 		{
 			name:    "Верный ответ",
 			method:  http.MethodGet,
-			request: "/4b90906a4f8dbe74fca39107f330b069",
+			request: "4b90906a4f8dbe74fca39107f330b069",
+			url:     "http://n1qttzvbn3.yandex/arqay",
 			want: want{
 				code:        http.StatusTemporaryRedirect,
 				response:    "http://n1qttzvbn3.yandex/arqay",
@@ -100,10 +103,17 @@ func TestPageById(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 
+			//Готовим данные
+			var s Storage = service.URLStorage{}
+			_, err := s.Save(test.url)
+			if err != nil {
+				t.Errorf("error prepare url %s", test.url)
+			}
+
 			r := chi.NewRouter()
 			r.Get("/{id}", PageByID)
 
-			request := httptest.NewRequest(test.method, test.request, nil)
+			request := httptest.NewRequest(test.method, "/"+test.request, nil)
 			response := httptest.NewRecorder()
 
 			r.ServeHTTP(response, request)
