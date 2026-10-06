@@ -72,7 +72,7 @@ func (s URLStorage) Find(key string) (string, error) {
 
 	if url == "" {
 		slog.Warn("record exist, but url empty", slog.Any("key", key))
-		return "", fmt.Errorf("record exist, but url empty.")
+		return "", fmt.Errorf("record exist, but url empty with key %s", key)
 	}
 
 	return url, nil
