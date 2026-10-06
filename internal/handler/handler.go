@@ -5,6 +5,7 @@ import (
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -38,9 +39,9 @@ func MainPage(flagEnv *FlagEnv) http.HandlerFunc {
 
 		bodyText := string(bodyBytes)
 
-		shortURL := bodyText
+		URLtoShorten := bodyText
 
-		suffix, err := s.Save(shortURL)
+		suffix, err := s.Save(URLtoShorten)
 		if err != nil {
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
@@ -48,7 +49,15 @@ func MainPage(flagEnv *FlagEnv) http.HandlerFunc {
 
 		res.Header().Set("Content-Type", "text/plain")
 		res.WriteHeader(http.StatusCreated)
-		res.Write([]byte(flagEnv.FlagRunShorternerAddr + "/" + suffix))
+
+		url, err := url.JoinPath(flagEnv.FlagRunShorternerAddr, suffix)
+
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		res.Write([]byte(url))
 	}
 }
 
