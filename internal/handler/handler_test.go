@@ -105,7 +105,9 @@ func TestPageById(t *testing.T) {
 
 			//Готовим данные
 			var s Storage = service.URLStorage{}
-			_, err := s.Save(test.url)
+			key, err := service.Generate(test.url, false, 1)
+
+			_, err = s.Save(test.url, key)
 			if err != nil {
 				t.Errorf("error prepare url %s", test.url)
 			}

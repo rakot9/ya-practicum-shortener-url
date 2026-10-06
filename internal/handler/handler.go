@@ -10,7 +10,7 @@ import (
 )
 
 type Storage interface {
-	Save(URL string) (string, error)
+	Save(URL string, key string) (bool, error)
 	Find(hash string) (string, error)
 }
 
@@ -21,8 +21,6 @@ type FlagEnv struct {
 
 func MainPage(flagEnv *FlagEnv) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-
-		var s Storage = service.URLStorage{}
 
 		if !strings.Contains(req.Header.Get("Content-Type"), "text/plain") {
 			http.Error(res, "Неверный http метод запроса", http.StatusBadRequest)
@@ -41,7 +39,11 @@ func MainPage(flagEnv *FlagEnv) http.HandlerFunc {
 
 		URLtoShorten := bodyText
 
-		suffix, err := s.Save(URLtoShorten)
+		var s Storage = service.URLStorage{}
+		key, err := service.Generate(URLtoShorten, false, 1)
+
+		_, err = s.Save(URLtoShorten, key)
+
 		if err != nil {
 			http.Error(res, "server error", http.StatusInternalServerError)
 			return
@@ -50,7 +52,7 @@ func MainPage(flagEnv *FlagEnv) http.HandlerFunc {
 		res.Header().Set("Content-Type", "text/plain")
 		res.WriteHeader(http.StatusCreated)
 
-		url, err := url.JoinPath(flagEnv.FlagRunShorternerAddr, suffix)
+		url, err := url.JoinPath(flagEnv.FlagRunShorternerAddr, key)
 
 		if err != nil {
 			http.Error(res, err.Error(), http.StatusBadRequest)
