@@ -1,29 +1,33 @@
 package main
 
 import (
-	"fmt"
 	"github.com/go-chi/chi/v5"
-	"github.com/rakot9/ya-practicum-shortener-url/config"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/router"
+	"log/slog"
 	"net/http"
 	"os"
 )
 
 func main() {
-	config.ParseFlags(os.Args[1:])
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
 
-	router := router.Router(config.FlagRunAddr, config.FlagRunShorternerAddr, config.FlagLog)
+	flags := config.ParseFlags(os.Args[1:])
 
-	if err := run(router); err != nil {
-		panic(err)
+	router := router.Router(flags.FlagRunAddr, flags.FlagRunShorternerAddr, flags.FlagLog)
+
+	if err := run(router, flags); err != nil {
+		slog.Error("failed to load configuration. Error: ", slog.Any("error", err))
+		os.Exit(1)
 	}
 }
 
-func run(router chi.Router) error {
+func run(router chi.Router, flags config.Flags) error {
 
-	if config.FlagLog {
-		fmt.Println("Running server on", config.FlagRunAddr)
+	if flags.FlagLog {
+		slog.Info("Running server on", slog.Any("flag_run_addr", flags.FlagRunAddr))
 	}
 
-	return http.ListenAndServe(config.FlagRunAddr, router)
+	return http.ListenAndServe(flags.FlagRunAddr, router)
 }

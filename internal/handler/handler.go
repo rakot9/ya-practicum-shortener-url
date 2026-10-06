@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+type Storage interface {
+	Save(URL string) (string, error)
+	Find(hash string) (string, error)
+}
+
 type FlagEnv struct {
 	FlagRunAddr           string
 	FlagRunShorternerAddr string
@@ -15,52 +20,48 @@ type FlagEnv struct {
 
 func MainPage(flagEnv *FlagEnv) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		if req.Method == http.MethodPost {
-			if !strings.Contains(req.Header.Get("Content-Type"), "text/plain") {
-				http.Error(res, "Неверный http метод запроса", http.StatusBadRequest)
-			}
 
-			req.Body = http.MaxBytesReader(res, req.Body, 1048576)
+		var s Storage = service.UrlStorage{}
 
-			bodyBytes, err := io.ReadAll(req.Body)
-			if err != nil {
-				http.Error(res, "Превышен размер тела сообщения: "+err.Error(), http.StatusBadRequest)
-				return
-			}
-
-			bodyText := string(bodyBytes)
-
-			shortURL := bodyText
-
-			res.Header().Set("Content-Type", "text/plain")
-			res.WriteHeader(http.StatusCreated)
-
-			suffix, err := service.Save(shortURL)
-			if err != nil {
-				http.Error(res, err.Error(), http.StatusBadRequest)
-				return
-			}
-
-			res.Write([]byte(flagEnv.FlagRunShorternerAddr + "/" + suffix))
-		} else {
-			http.Error(res, "Неверный http метод запроса Main", http.StatusBadRequest)
+		if !strings.Contains(req.Header.Get("Content-Type"), "text/plain") {
+			http.Error(res, "Неверный http метод запроса", http.StatusBadRequest)
 			return
 		}
-	}
-}
 
-func PageByID(res http.ResponseWriter, req *http.Request) {
-	if req.Method == http.MethodGet {
+		req.Body = http.MaxBytesReader(res, req.Body, 1048576)
 
-		id := chi.URLParam(req, "id")
-		url, err := service.Find(id)
+		bodyBytes, err := io.ReadAll(req.Body)
+		if err != nil {
+			http.Error(res, "Превышен размер тела сообщения: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		bodyText := string(bodyBytes)
+
+		shortURL := bodyText
+
+		suffix, err := s.Save(shortURL)
 		if err != nil {
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		http.Redirect(res, req, url, http.StatusTemporaryRedirect)
-	} else {
-		http.Error(res, "Неверный http метод запроса ById", http.StatusBadRequest)
+		res.Header().Set("Content-Type", "text/plain")
+		res.WriteHeader(http.StatusCreated)
+		res.Write([]byte(flagEnv.FlagRunShorternerAddr + "/" + suffix))
 	}
+}
+
+func PageByID(res http.ResponseWriter, req *http.Request) {
+
+	var s Storage = service.UrlStorage{}
+
+	id := chi.URLParam(req, "id")
+	url, err := s.Find(id)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	http.Redirect(res, req, url, http.StatusTemporaryRedirect)
 }

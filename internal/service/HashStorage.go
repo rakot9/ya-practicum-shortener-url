@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 )
@@ -12,13 +13,16 @@ import (
 const StorageFile = "storage.txt"
 const DELIMITER = ";"
 
+type UrlStorage struct {
+}
+
 type Record struct {
 	HashURL string
 	URL     string
 }
 
 // Todo: сделать проверку на дубли
-func Save(URL string) (string, error) {
+func (s UrlStorage) Save(URL string) (string, error) {
 
 	hash := md5.Sum([]byte(URL))
 	Hash := hex.EncodeToString(hash[:])
@@ -37,14 +41,14 @@ func Save(URL string) (string, error) {
 	// Записываем поля структуры, разделяя их ; (%s;%s)
 	_, err = fmt.Fprintf(file, "%s%s%s\n", data.HashURL, DELIMITER, data.URL)
 	if err != nil {
-		fmt.Println("Error write to file storage:", err)
+		slog.Error("error write to file storage:. Error: ", slog.Any("error", err))
 		return "", fmt.Errorf("error write to file storage: %s", err)
 	}
 
 	return Hash, nil
 }
 
-func Find(hash string) (string, error) {
+func (s UrlStorage) Find(hash string) (string, error) {
 
 	file, err := os.Open(StorageFile)
 
@@ -70,7 +74,7 @@ func Find(hash string) (string, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		fmt.Print("Error scanner")
+		slog.Error("error scanner", slog.Any("error", err))
 		return "", err
 	}
 
