@@ -21,7 +21,7 @@ type FlagEnv struct {
 func MainPage(flagEnv *FlagEnv) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 
-		var s Storage = service.UrlStorage{}
+		var s Storage = service.URLStorage{}
 
 		if !strings.Contains(req.Header.Get("Content-Type"), "text/plain") {
 			http.Error(res, "Неверный http метод запроса", http.StatusBadRequest)
@@ -54,7 +54,7 @@ func MainPage(flagEnv *FlagEnv) http.HandlerFunc {
 
 func PageByID(res http.ResponseWriter, req *http.Request) {
 
-	var s Storage = service.UrlStorage{}
+	var s Storage = service.URLStorage{}
 
 	id := chi.URLParam(req, "id")
 	url, err := s.Find(id)

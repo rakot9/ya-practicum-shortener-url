@@ -13,7 +13,7 @@ import (
 const StorageFile = "storage.txt"
 const DELIMITER = ";"
 
-type UrlStorage struct {
+type URLStorage struct {
 }
 
 type Record struct {
@@ -22,7 +22,7 @@ type Record struct {
 }
 
 // Todo: сделать проверку на дубли
-func (s UrlStorage) Save(URL string) (string, error) {
+func (s URLStorage) Save(URL string) (string, error) {
 
 	hash := md5.Sum([]byte(URL))
 	Hash := hex.EncodeToString(hash[:])
@@ -48,7 +48,7 @@ func (s UrlStorage) Save(URL string) (string, error) {
 	return Hash, nil
 }
 
-func (s UrlStorage) Find(hash string) (string, error) {
+func (s URLStorage) Find(hash string) (string, error) {
 
 	file, err := os.Open(StorageFile)
 
