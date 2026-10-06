@@ -1,27 +1,25 @@
 package main
 
 import (
-	"flag"
-	// "github.com/go-chi/chi/v5"
-	// "github.com/rakot9/ya-practicum-shortener-url/internal/config"
-	"os"
+	"github.com/go-chi/chi/v5"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
 	"testing"
 )
 
 // Тест для функции run без блокировки потока реальным сервером
-func TestRunConfiguration(t *testing.T) {
-	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+func Test_run(t *testing.T) {
+	mockRouter := chi.NewRouter()
 
-	// flags := config.Flags{
-	// 	FlagRunAddr:           "localhost:8080",
-	// 	FlagRunShorternerAddr: "http://localhost:8080",
-	// 	FlagLog:               false,
-	// }
+	// // Ошибочный тест
+	t.Run("should fail with invalid address", func(t *testing.T) {
+		flags := config.Flags{
+			FlagRunAddr: "localhost:8081",
+			FlagLog:     false,
+		}
 
-	// r := chi.NewRouter()
-
-	// errChan := make(chan error, 1)
-	// go func() {
-	// 	errChan <- run(r)
-	// }()
+		err := run(mockRouter, flags)
+		if err == nil {
+			t.Error("expected an error for invalid address, got nil")
+		}
+	})
 }
