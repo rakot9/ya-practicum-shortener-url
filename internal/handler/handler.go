@@ -40,7 +40,7 @@ func MainPage(flagEnv *FlagEnv) http.HandlerFunc {
 		URLtoShorten := bodyText
 
 		var s Storage = service.URLStorage{}
-		key, err := service.Generate(URLtoShorten, false, 1)
+		key, _ := service.Generate(URLtoShorten, false, 1)
 
 		_, err = s.Save(URLtoShorten, key)
 

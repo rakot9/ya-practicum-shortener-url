@@ -21,7 +21,7 @@ type Record struct {
 
 func (s URLStorage) Save(URL string, key string) (bool, error) {
 
-	findResult, err := s.Find(key)
+	findResult, _ := s.Find(key)
 
 	if findResult != "" {
 		return false, nil
