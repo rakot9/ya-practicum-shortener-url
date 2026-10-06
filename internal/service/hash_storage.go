@@ -79,10 +79,10 @@ func (s URLStorage) Find(key string) (string, error) {
 }
 
 func findByKey(key string) (string, error) {
-
-	file, err := os.Open(StorageFile)
+	file, err := os.OpenFile(StorageFile, os.O_CREATE|os.O_APPEND, 0644)
 
 	if err != nil {
+		slog.Error("findByKey error open file.", slog.Any("error", err))
 		return "", err
 	}
 
