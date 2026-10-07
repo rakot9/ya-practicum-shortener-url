@@ -22,7 +22,6 @@ func TestURLStorage_Find(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			//Готовим данные
 			var s handler.Storage = service.URLStorage{}
 			key, _ := service.Generate(tt.want, false, 1)
 
@@ -41,8 +40,7 @@ func TestURLStorage_Find(t *testing.T) {
 			if tt.wantErr {
 				t.Fatal("Find() succeeded unexpectedly")
 			}
-			// TODO: update the condition below to compare got with tt.want.
-			if true {
+			if tt.want != got {
 				t.Errorf("Find() = %v, want %v", got, tt.want)
 			}
 		})
