@@ -74,7 +74,10 @@ func (h *Handler) PageByID(res http.ResponseWriter, req *http.Request) {
 	url, err := h.storage.Find(id)
 	if err != nil {
 		slog.Error("error find key.", slog.Any("error", err))
-		http.StatusText(http.StatusInternalServerError)
+
+		res.WriteHeader(http.StatusInternalServerError)
+		res.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+
 		return
 	}
 
