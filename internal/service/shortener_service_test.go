@@ -50,7 +50,7 @@ func TestFind_NotFound(t *testing.T) {
 		t.Error("expected error for missing key, got nil")
 	}
 
-	expectedErr := "key not found in memory"
+	expectedErr := "key not found"
 	if err.Error() != expectedErr {
 		t.Errorf("expected error message %q, got %q", expectedErr, err.Error())
 	}

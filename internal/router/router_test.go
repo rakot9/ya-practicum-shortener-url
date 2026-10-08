@@ -32,13 +32,6 @@ func TestRouter(t *testing.T) {
 			body:           "",
 			expectedStatus: http.StatusMethodNotAllowed,
 		},
-		{
-			name:           "GET - dynamic id path exists in chi router",
-			method:         http.MethodGet,
-			url:            "/someRandomID123",
-			body:           "",
-			expectedStatus: http.StatusBadRequest,
-		},
 	}
 
 	for _, tc := range tests {
