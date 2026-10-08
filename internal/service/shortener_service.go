@@ -73,7 +73,7 @@ func (s *Storage) Find(key string) (string, error) {
 
 	URL, exists := s.store[key]
 	if !exists {
-		return "", errors.New("key not found in memory")
+		return "", errors.New("key not found")
 	}
 
 	return URL, nil

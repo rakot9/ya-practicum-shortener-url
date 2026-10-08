@@ -1,8 +1,9 @@
 package handler
 
 import (
+	"log/slog"
+
 	"github.com/go-chi/chi/v5"
-	//"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"io"
 	"net/http"
 	"net/url"
@@ -72,7 +73,8 @@ func (h *Handler) PageByID(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 	url, err := h.storage.Find(id)
 	if err != nil {
-		http.Error(res, err.Error(), http.StatusBadRequest)
+		slog.Error("error find key.", slog.Any("error", err))
+		http.StatusText(http.StatusInternalServerError)
 		return
 	}
 
