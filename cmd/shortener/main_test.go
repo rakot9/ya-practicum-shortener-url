@@ -1,14 +1,11 @@
 package main
 
 import (
-	// "github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
 	"net/http"
-	// "net/http/httptest"
-	"github.com/go-chi/chi/v5"
 	"testing"
 	"time"
-	// "testing"
 )
 
 func Test_run(t *testing.T) {

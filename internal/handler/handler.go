@@ -2,16 +2,16 @@ package handler
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
+	//"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 )
 
-type Storage interface {
-	Save(URL string, key string) (bool, error)
-	Find(hash string) (string, error)
+type StorageProtocol interface {
+	Save(URL string) (string, error)
+	Find(key string) (string, error)
 }
 
 type FlagEnv struct {
@@ -19,56 +19,58 @@ type FlagEnv struct {
 	FlagRunShorternerAddr string
 }
 
-func MainPage(flagEnv *FlagEnv) http.HandlerFunc {
-	return func(res http.ResponseWriter, req *http.Request) {
+type Handler struct {
+	storage StorageProtocol
+	flagEnv *FlagEnv
+}
 
-		if !strings.Contains(req.Header.Get("Content-Type"), "text/plain") {
-			http.Error(res, "Неверный http метод запроса", http.StatusBadRequest)
-			return
-		}
-
-		req.Body = http.MaxBytesReader(res, req.Body, 1048576)
-
-		bodyBytes, err := io.ReadAll(req.Body)
-		if err != nil {
-			http.Error(res, "Превышен размер тела сообщения: "+err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		bodyText := string(bodyBytes)
-
-		URLtoShorten := bodyText
-
-		var s Storage = service.URLStorage{}
-		key, _ := service.Generate(URLtoShorten, false, 1)
-
-		_, err = s.Save(URLtoShorten, key)
-
-		if err != nil {
-			http.Error(res, "server error", http.StatusInternalServerError)
-			return
-		}
-
-		res.Header().Set("Content-Type", "text/plain")
-		res.WriteHeader(http.StatusCreated)
-
-		url, err := url.JoinPath(flagEnv.FlagRunShorternerAddr, key)
-
-		if err != nil {
-			http.Error(res, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		res.Write([]byte(url))
+func NewHandler(storage StorageProtocol, flagEnv *FlagEnv) *Handler {
+	return &Handler{
+		storage: storage,
+		flagEnv: flagEnv,
 	}
 }
 
-func PageByID(res http.ResponseWriter, req *http.Request) {
+func (h *Handler) MainPage(res http.ResponseWriter, req *http.Request) {
+	if !strings.Contains(req.Header.Get("Content-Type"), "text/plain") {
+		http.Error(res, "Неверный http метод запроса", http.StatusBadRequest)
+		return
+	}
 
-	var s Storage = service.URLStorage{}
+	req.Body = http.MaxBytesReader(res, req.Body, 1048576)
 
+	bodyBytes, err := io.ReadAll(req.Body)
+	if err != nil {
+		http.Error(res, "Превышен размер тела сообщения: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	bodyText := string(bodyBytes)
+
+	URLtoShorten := bodyText
+
+	key, err := h.storage.Save(URLtoShorten)
+	if err != nil {
+		http.Error(res, "server error", http.StatusInternalServerError)
+		return
+	}
+
+	url, err := url.JoinPath(h.flagEnv.FlagRunShorternerAddr, key)
+
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	res.Header().Set("Content-Type", "text/plain")
+	res.WriteHeader(http.StatusCreated)
+
+	res.Write([]byte(url))
+}
+
+func (h *Handler) PageByID(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
-	url, err := s.Find(id)
+	url, err := h.storage.Find(id)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return

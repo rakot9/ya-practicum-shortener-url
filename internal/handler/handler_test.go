@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 )
@@ -18,14 +19,17 @@ func TestMainPage(t *testing.T) {
 	type want struct {
 		method      string
 		code        int
-		response    string
 		contentType string
 	}
 
-	flagEnv := &FlagEnv{
+	store := service.NewStorage()
+
+	cfg := &FlagEnv{
 		FlagRunAddr:           "localhost:8080",
 		FlagRunShorternerAddr: "http://localhost:8080",
 	}
+
+	h := NewHandler(store, cfg)
 
 	tests := []struct {
 		name    string
@@ -41,7 +45,6 @@ func TestMainPage(t *testing.T) {
 			body:    "http://n1qttzvbn3.yandex/arqay",
 			want: want{
 				code:        http.StatusCreated,
-				response:    "http://localhost:8080/4b90906a4f8dbe74fca39107f330b069",
 				contentType: "text/plain",
 			},
 		},
@@ -53,8 +56,7 @@ func TestMainPage(t *testing.T) {
 			request := httptest.NewRequest(test.method, test.request, strings.NewReader(test.body))
 			request.Header.Set("Content-Type", "text/plain")
 
-			handler := MainPage(flagEnv)
-			handler.ServeHTTP(response, request)
+			h.MainPage(response, request)
 
 			res := response.Result()
 
@@ -67,6 +69,19 @@ func TestMainPage(t *testing.T) {
 
 			require.NoError(t, err)
 
+			responseKey, err := url.Parse(string(resBody))
+			if err != nil {
+				require.NoError(t, err)
+			}
+
+			storageURL, err := h.storage.Find(strings.Trim(responseKey.Path, "/"))
+
+			if err != nil {
+				require.NoError(t, err)
+			}
+
+			assert.Equal(t, test.body, storageURL)
+
 			fmt.Printf("%d %s", res.StatusCode, string(resBody))
 		})
 	}
@@ -77,25 +92,30 @@ func TestPageById(t *testing.T) {
 	type want struct {
 		method      string
 		code        int
-		response    string
 		contentType string
 	}
 
+	store := service.NewStorage()
+
+	cfg := &FlagEnv{
+		FlagRunAddr:           "localhost:8080",
+		FlagRunShorternerAddr: "http://localhost:8080",
+	}
+
+	h := NewHandler(store, cfg)
+
 	tests := []struct {
-		name    string
-		method  string
-		request string
-		url     string
-		want    want
+		name   string
+		method string
+		url    string
+		want   want
 	}{
 		{
-			name:    "Верный ответ",
-			method:  http.MethodGet,
-			request: "4b90906a4f8dbe74fca39107f330b069",
-			url:     "http://n1qttzvbn3.yandex/arqay",
+			name:   "Верный ответ",
+			method: http.MethodGet,
+			url:    "http://n1qttzvbn3.yandex/arqay",
 			want: want{
 				code:        http.StatusTemporaryRedirect,
-				response:    "http://n1qttzvbn3.yandex/arqay",
 				contentType: "text/plain",
 			},
 		},
@@ -103,19 +123,15 @@ func TestPageById(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 
-			//Готовим данные
-			var s Storage = service.URLStorage{}
-			key, _ := service.Generate(test.url, false, 1)
-
-			_, err := s.Save(test.url, key)
+			key, err := h.storage.Save(test.url)
 			if err != nil {
 				t.Errorf("error prepare url %s", test.url)
 			}
 
 			r := chi.NewRouter()
-			r.Get("/{id}", PageByID)
+			r.Get("/{id}", h.PageByID)
 
-			request := httptest.NewRequest(test.method, "/"+test.request, nil)
+			request := httptest.NewRequest(test.method, cfg.FlagRunShorternerAddr+"/"+key, nil)
 			response := httptest.NewRecorder()
 
 			r.ServeHTTP(response, request)

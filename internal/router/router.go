@@ -4,6 +4,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/handler"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 )
 
 func Router(flagRunAddr string, flagRunShorternerAddr string, flagLog bool) chi.Router {
@@ -13,13 +14,17 @@ func Router(flagRunAddr string, flagRunShorternerAddr string, flagLog bool) chi.
 		r.Use(middleware.Logger)
 	}
 
-	flagEnv := &handler.FlagEnv{
+	store := service.NewStorage()
+
+	cfg := &handler.FlagEnv{
 		FlagRunAddr:           flagRunAddr,
 		FlagRunShorternerAddr: flagRunShorternerAddr,
 	}
 
-	r.Get("/{id}", handler.PageByID)
-	r.Post("/", handler.MainPage(flagEnv))
+	h := handler.NewHandler(store, cfg)
+
+	r.Get("/{id}", h.PageByID)
+	r.Post("/", h.MainPage)
 
 	return r
 }
