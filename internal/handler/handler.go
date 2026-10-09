@@ -1,19 +1,16 @@
 package handler
 
 import (
-	"log/slog"
-
+	"errors"
 	"github.com/go-chi/chi/v5"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
 )
-
-type StorageProtocol interface {
-	Save(URL string) (string, error)
-	Find(key string) (string, error)
-}
 
 type FlagEnv struct {
 	FlagRunAddr           string
@@ -21,14 +18,14 @@ type FlagEnv struct {
 }
 
 type Handler struct {
-	storage StorageProtocol
-	flagEnv *FlagEnv
+	urlService *service.URLService
+	flagEnv    *FlagEnv
 }
 
-func NewHandler(storage StorageProtocol, flagEnv *FlagEnv) *Handler {
+func NewHandler(urlService *service.URLService, flagEnv *FlagEnv) *Handler {
 	return &Handler{
-		storage: storage,
-		flagEnv: flagEnv,
+		urlService: urlService,
+		flagEnv:    flagEnv,
 	}
 }
 
@@ -50,9 +47,15 @@ func (h *Handler) MainPage(res http.ResponseWriter, req *http.Request) {
 
 	URLtoShorten := bodyText
 
-	key, err := h.storage.Save(URLtoShorten)
+	key, err := h.urlService.ShortenURL(URLtoShorten)
+
 	if err != nil {
-		http.Error(res, "server error", http.StatusInternalServerError)
+		if errors.Is(err, service.ErrCountAttemptExceed) {
+			slog.Error("count attempt (10) exceed for generate key. URL", slog.Any("error", err))
+			http.Error(res, "server error", http.StatusInternalServerError)
+			return
+		}
+		http.Error(res, "server error", http.StatusBadRequest)
 		return
 	}
 
@@ -71,8 +74,15 @@ func (h *Handler) MainPage(res http.ResponseWriter, req *http.Request) {
 
 func (h *Handler) PageByID(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
-	url, err := h.storage.Find(id)
+
+	url, err := h.urlService.GetURL(id)
+
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			http.Error(res, err.Error(), http.StatusBadRequest)
+			return
+		}
+
 		slog.Error("error find key.", slog.Any("error", err))
 
 		res.WriteHeader(http.StatusInternalServerError)

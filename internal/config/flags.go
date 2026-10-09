@@ -25,7 +25,6 @@ func ParseFlags(args []string) Flags {
 
 	fs.BoolVar(&flags.FlagLog, "l", false, "Вывод логов в консоль")
 
-	// парсим переданные серверу аргументы в зарегистрированные переменные
 	fs.Parse(args)
 
 	return flags
