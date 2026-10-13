@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"os"
 )
 
 type Flags struct {
@@ -26,6 +27,14 @@ func ParseFlags(args []string) Flags {
 	fs.BoolVar(&flags.FlagLog, "l", false, "Вывод логов в консоль")
 
 	fs.Parse(args)
+
+	if serverAddress := os.Getenv("SERVER_ADDRESS"); serverAddress != "" {
+		flags.FlagRunAddr = serverAddress
+	}
+
+	if baseURL := os.Getenv("BASE_URL"); baseURL != "" {
+		flags.FlagRunShorternerAddr = baseURL
+	}
 
 	return flags
 }
