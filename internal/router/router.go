@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/handler"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/logger"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
@@ -11,6 +12,7 @@ import (
 
 func Router(flagRunAddr string, flagRunShorternerAddr string, flagLog bool) chi.Router {
 	r := chi.NewRouter()
+	r.Use(middleware.StripSlashes)
 
 	zapLogger, _ := zap.NewProduction()
 	defer zapLogger.Sync()
@@ -28,6 +30,7 @@ func Router(flagRunAddr string, flagRunShorternerAddr string, flagLog bool) chi.
 
 	h := handler.NewHandler(service, cfg)
 
+	r.Post("/api/shorten", h.ApiShortURL)
 	r.Get("/{id}", h.PageByID)
 	r.Post("/", h.MainPage)
 
