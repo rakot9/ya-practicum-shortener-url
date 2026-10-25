@@ -39,20 +39,6 @@ func (h *Handler) ApiShortURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	/*
-		req.Body = http.MaxBytesReader(res, req.Body, 1048576)
-
-		bodyBytes, err := io.ReadAll(req.Body)
-		if err != nil {
-			http.Error(res, "Превышен размер тела сообщения: "+err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		bodyText := string(bodyBytes)
-
-		URLtoShorten := bodyText
-	*/
-
 	key, err := h.urlService.ShortenURL(shortURL.URL)
 
 	if err != nil {
