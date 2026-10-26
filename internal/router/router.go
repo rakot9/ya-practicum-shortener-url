@@ -2,9 +2,9 @@ package router
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/handler"
-	"github.com/rakot9/ya-practicum-shortener-url/internal/logger"
+	shortenerMiddleware "github.com/rakot9/ya-practicum-shortener-url/internal/middleware"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"go.uber.org/zap"
@@ -12,12 +12,13 @@ import (
 
 func Router(flagRunAddr string, flagRunShorternerAddr string, flagLog bool) chi.Router {
 	r := chi.NewRouter()
-	r.Use(middleware.StripSlashes)
+	r.Use(chiMiddleware.StripSlashes)
 
 	zapLogger, _ := zap.NewProduction()
 	defer zapLogger.Sync()
 
-	r.Use(logger.ZapLogger(zapLogger))
+	r.Use(shortenerMiddleware.ZapLogger(zapLogger))
+	r.Use(shortenerMiddleware.GzipMiddleware)
 
 	repo := repository.NewInMemoryRepository()
 
