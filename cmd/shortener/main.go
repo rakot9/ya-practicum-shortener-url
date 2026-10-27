@@ -15,7 +15,7 @@ func main() {
 
 	flags := config.ParseFlags(os.Args[1:])
 
-	router := router.Router(flags.FlagRunAddr, flags.FlagRunShorternerAddr, flags.FlagLog)
+	router := router.Router(flags)
 
 	if err := run(router, flags); err != nil {
 		slog.Error("failed to load configuration. Error: ", slog.Any("error", err))
@@ -24,10 +24,5 @@ func main() {
 }
 
 func run(router chi.Router, flags config.Flags) error {
-
-	if flags.FlagLog {
-		slog.Info("Running server on", slog.Any("flag_run_addr", flags.FlagRunAddr))
-	}
-
 	return http.ListenAndServe(flags.FlagRunAddr, router)
 }

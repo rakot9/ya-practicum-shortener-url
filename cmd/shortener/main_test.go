@@ -21,7 +21,6 @@ func Test_run(t *testing.T) {
 	flags := config.Flags{
 		FlagRunAddr:           testAddr,
 		FlagRunShorternerAddr: "localhost:8081",
-		FlagLog:               true,
 	}
 
 	// 3. Запускаем сервер в отдельной горутине, чтобы он не заблокировал выполнение теста

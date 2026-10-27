@@ -1,6 +1,7 @@
 package router
 
 import (
+	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -8,7 +9,13 @@ import (
 )
 
 func TestRouter(t *testing.T) {
-	r := Router("localhost:8080", "http://localhost:8080", false)
+	flags := config.Flags{
+		FlagRunAddr:           "localhost:8080",
+		FlagRunShorternerAddr: "http://localhost:8080",
+		FlagFileStoragePath:   "storage_shorten_url.txt",
+	}
+
+	r := Router(flags)
 
 	// Структура табличного теста
 	tests := []struct {

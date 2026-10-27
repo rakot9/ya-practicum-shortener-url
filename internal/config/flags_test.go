@@ -16,7 +16,7 @@ func TestParseFlags(t *testing.T) {
 			expected: Flags{
 				FlagRunAddr:           "localhost:8080",
 				FlagRunShorternerAddr: "http://localhost:8080",
-				FlagLog:               false,
+				FlagFileStoragePath:   "storage_shorten_url.txt",
 			},
 		},
 		{
@@ -25,7 +25,7 @@ func TestParseFlags(t *testing.T) {
 			expected: Flags{
 				FlagRunAddr:           "localhost:8081",
 				FlagRunShorternerAddr: "http://localhost:8080",
-				FlagLog:               false,
+				FlagFileStoragePath:   "storage_shorten_url.txt",
 			},
 		},
 		{
@@ -34,7 +34,7 @@ func TestParseFlags(t *testing.T) {
 			expected: Flags{
 				FlagRunAddr:           "localhost:8080",
 				FlagRunShorternerAddr: "http://localhost:8081",
-				FlagLog:               false,
+				FlagFileStoragePath:   "storage_shorten_url.txt",
 			},
 		},
 		{
@@ -43,7 +43,7 @@ func TestParseFlags(t *testing.T) {
 			expected: Flags{
 				FlagRunAddr:           "localhost:8081",
 				FlagRunShorternerAddr: "http://localhost:8081",
-				FlagLog:               false,
+				FlagFileStoragePath:   "storage_shorten_url.txt",
 			},
 		},
 	}
@@ -54,7 +54,7 @@ func TestParseFlags(t *testing.T) {
 
 			if flags.FlagRunAddr != tt.expected.FlagRunAddr ||
 				flags.FlagRunShorternerAddr != tt.expected.FlagRunShorternerAddr ||
-				flags.FlagLog != tt.expected.FlagLog {
+				flags.FlagFileStoragePath != tt.expected.FlagFileStoragePath {
 				t.Errorf("got %+v, want %+v", flags, tt.expected)
 			}
 		})

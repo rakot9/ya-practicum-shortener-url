@@ -3,6 +3,7 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
 	"sync"
 )
 
@@ -15,13 +16,15 @@ type URLRepository interface {
 
 // InMemoryRepository реализует URLRepository для хранения данных в оперативной памяти.
 type InMemoryRepository struct {
-	mu    sync.RWMutex
-	store map[string]string
+	mu           sync.RWMutex
+	store        map[string]string
+	configParams config.Flags
 }
 
-func NewInMemoryRepository() *InMemoryRepository {
+func NewInMemoryRepository(configParams config.Flags) *InMemoryRepository {
 	return &InMemoryRepository{
-		store: make(map[string]string),
+		store:        make(map[string]string),
+		configParams: configParams,
 	}
 }
 
