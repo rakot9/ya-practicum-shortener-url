@@ -51,7 +51,7 @@ func TestHandler_ApiShortURL(t *testing.T) {
 			}
 
 			recorder := httptest.NewRecorder()
-			h.ApiShortURL(recorder, request)
+			h.APIShortURL(recorder, request)
 
 			res := recorder.Result()
 			defer res.Body.Close()

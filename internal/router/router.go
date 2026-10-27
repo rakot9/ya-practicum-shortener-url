@@ -45,7 +45,7 @@ func Router(configParams config.Flags) chi.Router {
 
 	h := handler.NewHandler(service, cfg)
 
-	r.Post("/api/shorten", h.ApiShortURL)
+	r.Post("/api/shorten", h.APIShortURL)
 	r.Get("/{id}", h.PageByID)
 	r.Post("/", h.MainPage)
 

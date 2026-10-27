@@ -5,27 +5,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"sync"
 
 	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
 )
 
 type FileStorage struct {
-	Uuid        int    `json:"uuid"`
+	UUID        int    `json:"uuid"`
 	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`
 }
 
 // FileStorgeRepository реализует URLRepository для хранения данных в оперативной памяти.
 type FileStorgeRepository struct {
-	mu           sync.RWMutex
-	store        map[string]string
 	configParams config.Flags
 }
 
 func NewFileStorgeRepository(configParams config.Flags) *FileStorgeRepository {
 	return &FileStorgeRepository{
-		store:        make(map[string]string),
 		configParams: configParams,
 	}
 }
@@ -44,7 +40,7 @@ func (r *FileStorgeRepository) Save(key string, URL string) error {
 	}
 
 	saveData := FileStorage{
-		Uuid:        lines + 1,
+		UUID:        lines + 1,
 		ShortURL:    key,
 		OriginalURL: URL,
 	}

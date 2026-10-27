@@ -19,7 +19,7 @@ type ShortURLResponse struct {
 	URL string `json:"result"`
 }
 
-func (h *Handler) ApiShortURL(res http.ResponseWriter, req *http.Request) {
+func (h *Handler) APIShortURL(res http.ResponseWriter, req *http.Request) {
 	if !strings.Contains(req.Header.Get("Content-Type"), "application/json") {
 		http.Error(res, "Неверный http метод запроса", http.StatusBadRequest)
 		return
