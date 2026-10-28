@@ -31,11 +31,7 @@ func (m *mockRepo) Find(key string) (string, error) {
 }
 
 func initRepository(configParams config.Flags) repository.URLRepository {
-	var repo repository.URLRepository
-
-	repo = repository.NewInMemoryRepository(configParams)
-
-	return repo
+	return repository.NewInMemoryRepository(configParams)
 }
 
 // Инициализация хендлера с mock сервисом
