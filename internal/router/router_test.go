@@ -5,6 +5,7 @@ import (
 	"github.com/rakot9/ya-practicum-shortener-url/internal/handler"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
+	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -39,10 +40,13 @@ func TestRouter(t *testing.T) {
 		FlagInMemoryStorage:   true,
 	}
 
+	zapLogger, _ := zap.NewProduction()
+	defer zapLogger.Sync()
+
 	repo := initRepository(flags)
 	h := setupTestHandler(flags, repo)
 
-	r := Router(h)
+	r := Router(h, zapLogger)
 
 	// Структура табличного теста
 	tests := []struct {

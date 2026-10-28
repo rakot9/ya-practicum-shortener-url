@@ -8,16 +8,16 @@ import (
 	"go.uber.org/zap"
 )
 
-func Router(h *handler.Handler) chi.Router {
+func Router(h *handler.Handler, zapLogger *zap.Logger) chi.Router {
 	r := chi.NewRouter()
+
 	r.Use(chiMiddleware.StripSlashes)
 
-	zapLogger, _ := zap.NewProduction()
-	defer zapLogger.Sync()
-
+	// attach middleware
 	r.Use(shortenerMiddleware.ZapLogger(zapLogger))
 	r.Use(shortenerMiddleware.GzipMiddleware)
 
+	// call handlers
 	r.Post("/api/shorten", h.APIShortURL)
 	r.Get("/{id}", h.PageByID)
 	r.Post("/", h.MainPage)

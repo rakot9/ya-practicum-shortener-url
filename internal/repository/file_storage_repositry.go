@@ -79,7 +79,6 @@ func (r *FileStorgeRepository) Find(key string) (string, error) {
 		err := json.Unmarshal(lineBytes, &fileStorage)
 
 		if err != nil {
-			fmt.Printf("Ошибка парсинга на строке %d: %v", lineNum, err)
 			continue
 		}
 

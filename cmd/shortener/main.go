@@ -7,27 +7,42 @@ import (
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/router"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
+	"go.uber.org/zap"
 	"log/slog"
 	"net/http"
 	"os"
 )
 
+type application struct {
+	logger       *zap.Logger
+	configParams config.Flags
+}
+
 func main() {
+	// get configuration to run app
+	flags := config.ParseFlags(os.Args[1:])
+
 	// init Slog
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
 
-	// get configuration to run app
-	flags := config.ParseFlags(os.Args[1:])
+	// configure logger
+	zapLogger, _ := zap.NewProduction()
+	defer zapLogger.Sync()
+
+	app := &application{
+		logger:       zapLogger,
+		configParams: flags,
+	}
 
 	// init storage repository
-	storageRepo := initRepository(flags)
+	storageRepo := app.initRepository()
 
 	// configure handler
-	handler := configureHandler(flags, storageRepo)
+	handler := app.configureHandler(storageRepo)
 
 	// call router
-	router := router.Router(handler)
+	router := router.Router(handler, zapLogger)
 
 	// close openned file handler
 	defer func() {
@@ -37,44 +52,45 @@ func main() {
 		}
 	}()
 
-	if err := run(router, flags); err != nil {
+	if err := app.run(router); err != nil {
 		slog.Error("failed to load configuration. Error: ", slog.Any("error", err))
 		os.Exit(1)
 	}
 }
 
-func configureHandler(flags config.Flags, storageRepo repository.URLRepository) *handler.Handler {
+func (app *application) configureHandler(storageRepo repository.URLRepository) *handler.Handler {
 	service := service.NewURLService(storageRepo)
 
 	cfg := &handler.FlagEnv{
-		FlagRunAddr:           flags.FlagRunAddr,
-		FlagRunShorternerAddr: flags.FlagRunShorternerAddr,
+		FlagRunAddr:           app.configParams.FlagRunAddr,
+		FlagRunShorternerAddr: app.configParams.FlagRunShorternerAddr,
 	}
 
 	return handler.NewHandler(service, cfg)
 }
 
-func initRepository(configParams config.Flags) repository.URLRepository {
+func (app *application) initRepository() repository.URLRepository {
 	var repo repository.URLRepository
 	var err error
 
-	if configParams.FlagInMemoryStorage {
-		repo = repository.NewInMemoryRepository(configParams)
+	if app.configParams.FlagInMemoryStorage {
+		repo = repository.NewInMemoryRepository(app.configParams)
 	} else {
-		if configParams.FlagFileStoragePath != "" {
-			repo, err = repository.NewFileStorgeRepository(configParams)
+		if app.configParams.FlagFileStoragePath != "" {
+			repo, err = repository.NewFileStorgeRepository(app.configParams)
 
 			if err != nil {
 				slog.Error("Ошибка при инициализации репозитория хранилищац файлов: ", slog.Any("error", err))
 			}
 		} else {
-			panic("Не указан режим работы приложения")
+			app.logger.Error("Не указан режим работы приложения")
+			os.Exit(1)
 		}
 	}
 
 	return repo
 }
 
-func run(router chi.Router, flags config.Flags) error {
-	return http.ListenAndServe(flags.FlagRunAddr, router)
+func (app *application) run(router chi.Router) error {
+	return http.ListenAndServe(app.configParams.FlagRunAddr, router)
 }
