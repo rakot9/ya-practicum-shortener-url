@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
@@ -18,21 +19,23 @@ type FileStorage struct {
 // FileStorgeRepository реализует URLRepository для хранения данных в оперативной памяти.
 type FileStorgeRepository struct {
 	configParams config.Flags
+	file         *os.File
 }
 
-func NewFileStorgeRepository(configParams config.Flags) *FileStorgeRepository {
+func NewFileStorgeRepository(configParams config.Flags) (*FileStorgeRepository, error) {
+
+	file, err := os.OpenFile(configParams.FlagFileStoragePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open storage file: %w", err)
+	}
+
 	return &FileStorgeRepository{
 		configParams: configParams,
-	}
+		file:         file,
+	}, nil
 }
 
 func (r *FileStorgeRepository) Save(key string, URL string) error {
-	file, err := os.OpenFile(r.configParams.FlagFileStoragePath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
 	lines, err := r.getMaxCountRecords()
 
 	if err != nil {
@@ -52,23 +55,17 @@ func (r *FileStorgeRepository) Save(key string, URL string) error {
 
 	data = append(data, '\n')
 
-	_, err = file.Write(data)
+	_, err = r.file.Write(data)
 
 	return err
 }
 
 func (r *FileStorgeRepository) Find(key string) (string, error) {
-	fmt.Printf("File storage Find %s \n", key)
-
-	file, err := os.OpenFile(r.configParams.FlagFileStoragePath, os.O_RDONLY, 0666)
-
-	if err != nil {
-		return "", fmt.Errorf("key not found in storage file %s: %w", key, ErrNotFound)
+	if _, err := r.file.Seek(0, io.SeekStart); err != nil {
+		return "", err
 	}
 
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(r.file)
 
 	lineNum := 0
 
@@ -100,14 +97,11 @@ func (r *FileStorgeRepository) Find(key string) (string, error) {
 }
 
 func (r *FileStorgeRepository) getMaxCountRecords() (int, error) {
-	file, err := os.OpenFile(r.configParams.FlagFileStoragePath, os.O_RDONLY|os.O_CREATE, 0666)
-	if err != nil {
+	if _, err := r.file.Seek(0, io.SeekStart); err != nil {
 		return 0, err
 	}
 
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(r.file)
 	count := 0
 
 	// Сканер автоматически читает файл строка за строкой
@@ -121,4 +115,11 @@ func (r *FileStorgeRepository) getMaxCountRecords() (int, error) {
 	}
 
 	return count, nil
+}
+
+func (r *FileStorgeRepository) Close() error {
+	if r.file != nil {
+		return r.file.Close()
+	}
+	return nil
 }

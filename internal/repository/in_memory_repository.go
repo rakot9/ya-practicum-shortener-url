@@ -12,6 +12,7 @@ var ErrNotFound = errors.New("resource not found")
 type URLRepository interface {
 	Save(key, url string) error
 	Find(key string) (string, error)
+	Close() error
 }
 
 // InMemoryRepository реализует URLRepository для хранения данных в оперативной памяти.
@@ -44,4 +45,8 @@ func (r *InMemoryRepository) Find(key string) (string, error) {
 		return "", fmt.Errorf("key not found %s: %w", key, ErrNotFound)
 	}
 	return url, nil
+}
+
+func (r *InMemoryRepository) Close() error {
+	return nil
 }

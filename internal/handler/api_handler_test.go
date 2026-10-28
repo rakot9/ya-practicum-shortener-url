@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,7 +12,15 @@ import (
 )
 
 func TestHandler_ApiShortURL(t *testing.T) {
-	h, _ := setupTestHandler()
+	flags := config.Flags{
+		FlagRunAddr:           "localhost:8080",
+		FlagRunShorternerAddr: "http://localhost:8080",
+		FlagFileStoragePath:   "shortener.txt",
+		FlagInMemoryStorage:   true,
+	}
+
+	repo := initRepository(flags)
+	h := setupTestHandler(flags, repo)
 
 	tests := []struct {
 		name         string

@@ -2,20 +2,47 @@ package router
 
 import (
 	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/handler"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 )
 
+func initRepository(configParams config.Flags) repository.URLRepository {
+	var repo repository.URLRepository
+
+	repo = repository.NewInMemoryRepository(configParams)
+
+	return repo
+}
+
+// Инициализация хендлера с mock сервисом
+func setupTestHandler(configParams config.Flags, storageRepo repository.URLRepository) *handler.Handler {
+	service := service.NewURLService(storageRepo)
+
+	cfg := &handler.FlagEnv{
+		FlagRunAddr:           configParams.FlagRunAddr,
+		FlagRunShorternerAddr: configParams.FlagRunShorternerAddr,
+	}
+
+	return handler.NewHandler(service, cfg)
+}
+
 func TestRouter(t *testing.T) {
 	flags := config.Flags{
 		FlagRunAddr:           "localhost:8080",
 		FlagRunShorternerAddr: "http://localhost:8080",
-		FlagFileStoragePath:   "storage_shorten_url.txt",
+		FlagFileStoragePath:   "shortener.txt",
+		FlagInMemoryStorage:   true,
 	}
 
-	r := Router(flags)
+	repo := initRepository(flags)
+	h := setupTestHandler(flags, repo)
+
+	r := Router(h)
 
 	// Структура табличного теста
 	tests := []struct {
