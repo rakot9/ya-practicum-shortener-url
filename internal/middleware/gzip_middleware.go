@@ -31,10 +31,20 @@ type gzipResponseWriter struct {
 }
 
 func (w *gzipResponseWriter) WriteHeader(statusCode int) {
+	// status code with code not compressed
 	if statusCode >= 300 && statusCode < 400 {
 		w.skipGzip = true
 		w.ResponseWriter.Header().Del("Content-Encoding")
 	}
+
+	// add check for content-type
+	contentType := w.Header().Get("Content-Type")
+
+	if strings.HasPrefix(contentType, "application/json") || strings.HasPrefix(contentType, "text/html") {
+		w.skipGzip = false
+		w.ResponseWriter.Header().Del("Content-Length")
+	}
+
 	w.ResponseWriter.WriteHeader(statusCode)
 }
 
