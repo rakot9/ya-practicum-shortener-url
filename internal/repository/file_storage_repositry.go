@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"io"
 	"os"
 
@@ -11,7 +12,7 @@ import (
 )
 
 type FileStorage struct {
-	UUID        int    `json:"uuid"`
+	UUID        string `json:"uuid"`
 	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`
 }
@@ -36,14 +37,10 @@ func NewFileStorgeRepository(configParams config.Flags) (*FileStorgeRepository, 
 }
 
 func (r *FileStorgeRepository) Save(key string, URL string) error {
-	lines, err := r.getMaxCountRecords()
-
-	if err != nil {
-		return err
-	}
+	idV4 := uuid.New()
 
 	saveData := FileStorage{
-		UUID:        lines + 1,
+		UUID:        idV4.String(),
 		ShortURL:    key,
 		OriginalURL: URL,
 	}
@@ -93,27 +90,6 @@ func (r *FileStorgeRepository) Find(key string) (string, error) {
 	}
 
 	return "", fmt.Errorf("key not found in storage file %s: %w", key, ErrNotFound)
-}
-
-func (r *FileStorgeRepository) getMaxCountRecords() (int, error) {
-	if _, err := r.file.Seek(0, io.SeekStart); err != nil {
-		return 0, err
-	}
-
-	scanner := bufio.NewScanner(r.file)
-	count := 0
-
-	// Сканер автоматически читает файл строка за строкой
-	for scanner.Scan() {
-		count++
-	}
-
-	// Обязательно проверяем, не возникло ли ошибок при чтении
-	if err := scanner.Err(); err != nil {
-		return 0, err
-	}
-
-	return count, nil
 }
 
 func (r *FileStorgeRepository) Close() error {

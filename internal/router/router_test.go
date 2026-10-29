@@ -12,12 +12,12 @@ import (
 	"testing"
 )
 
-func initRepository(configParams config.Flags) repository.URLRepository {
+func initRepository(configParams config.Flags) service.URLRepository {
 	return repository.NewInMemoryRepository(configParams)
 }
 
 // Инициализация хендлера с mock сервисом
-func setupTestHandler(configParams config.Flags, storageRepo repository.URLRepository) *handler.Handler {
+func setupTestHandler(configParams config.Flags, storageRepo service.URLRepository) *handler.Handler {
 	service := service.NewURLService(storageRepo)
 
 	cfg := &handler.FlagEnv{

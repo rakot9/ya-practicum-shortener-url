@@ -46,7 +46,6 @@ func main() {
 
 	// close openned file handler
 	defer func() {
-		storageRepo.Close()
 		if err := storageRepo.Close(); err != nil {
 			slog.Error("Ошибка при закрытии файла хранилища: ", slog.Any("error", err))
 		}
@@ -58,7 +57,7 @@ func main() {
 	}
 }
 
-func (app *application) configureHandler(storageRepo repository.URLRepository) *handler.Handler {
+func (app *application) configureHandler(storageRepo service.URLRepository) *handler.Handler {
 	service := service.NewURLService(storageRepo)
 
 	cfg := &handler.FlagEnv{
@@ -69,8 +68,8 @@ func (app *application) configureHandler(storageRepo repository.URLRepository) *
 	return handler.NewHandler(service, cfg)
 }
 
-func (app *application) initRepository() repository.URLRepository {
-	var repo repository.URLRepository
+func (app *application) initRepository() service.URLRepository {
+	var repo service.URLRepository
 	var err error
 
 	if app.configParams.FlagInMemoryStorage {
@@ -81,6 +80,7 @@ func (app *application) initRepository() repository.URLRepository {
 
 			if err != nil {
 				slog.Error("Ошибка при инициализации репозитория хранилищац файлов: ", slog.Any("error", err))
+				os.Exit(1)
 			}
 		} else {
 			app.logger.Error("Не указан режим работы приложения")

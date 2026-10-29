@@ -9,12 +9,6 @@ import (
 
 var ErrNotFound = errors.New("resource not found")
 
-type URLRepository interface {
-	Save(key, url string) error
-	Find(key string) (string, error)
-	Close() error
-}
-
 // InMemoryRepository реализует URLRepository для хранения данных в оперативной памяти.
 type InMemoryRepository struct {
 	mu           sync.RWMutex
