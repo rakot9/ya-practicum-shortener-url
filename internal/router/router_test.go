@@ -1,14 +1,48 @@
 package router
 
 import (
+	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/handler"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
+	"go.uber.org/zap"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 )
 
+func initRepository(configParams config.Flags) service.URLRepository {
+	return repository.NewInMemoryRepository(configParams)
+}
+
+// Инициализация хендлера с mock сервисом
+func setupTestHandler(configParams config.Flags, storageRepo service.URLRepository) *handler.Handler {
+	service := service.NewURLService(storageRepo)
+
+	cfg := &handler.FlagEnv{
+		FlagRunAddr:           configParams.FlagRunAddr,
+		FlagRunShorternerAddr: configParams.FlagRunShorternerAddr,
+	}
+
+	return handler.NewHandler(service, cfg)
+}
+
 func TestRouter(t *testing.T) {
-	r := Router("localhost:8080", "http://localhost:8080", false)
+	flags := config.Flags{
+		FlagRunAddr:           "localhost:8080",
+		FlagRunShorternerAddr: "http://localhost:8080",
+		FlagFileStoragePath:   "shortener.txt",
+		FlagInMemoryStorage:   true,
+	}
+
+	zapLogger, _ := zap.NewProduction()
+	defer zapLogger.Sync()
+
+	repo := initRepository(flags)
+	h := setupTestHandler(flags, repo)
+
+	r := Router(h, zapLogger)
 
 	// Структура табличного теста
 	tests := []struct {

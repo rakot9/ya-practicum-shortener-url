@@ -2,30 +2,23 @@ package router
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/handler"
-	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
-	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
+	shortenerMiddleware "github.com/rakot9/ya-practicum-shortener-url/internal/middleware"
+	"go.uber.org/zap"
 )
 
-func Router(flagRunAddr string, flagRunShorternerAddr string, flagLog bool) chi.Router {
+func Router(h *handler.Handler, zapLogger *zap.Logger) chi.Router {
 	r := chi.NewRouter()
 
-	if flagLog {
-		r.Use(middleware.Logger)
-	}
+	r.Use(chiMiddleware.StripSlashes)
 
-	repo := repository.NewInMemoryRepository()
+	// attach middleware
+	r.Use(shortenerMiddleware.ZapLogger(zapLogger))
+	r.Use(shortenerMiddleware.GzipMiddleware)
 
-	service := service.NewURLService(repo)
-
-	cfg := &handler.FlagEnv{
-		FlagRunAddr:           flagRunAddr,
-		FlagRunShorternerAddr: flagRunShorternerAddr,
-	}
-
-	h := handler.NewHandler(service, cfg)
-
+	// call handlers
+	r.Post("/api/shorten", h.APIShortURL)
 	r.Get("/{id}", h.PageByID)
 	r.Post("/", h.MainPage)
 

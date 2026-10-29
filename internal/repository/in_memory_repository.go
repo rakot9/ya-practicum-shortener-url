@@ -3,25 +3,23 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
 	"sync"
 )
 
 var ErrNotFound = errors.New("resource not found")
 
-type URLRepository interface {
-	Save(key, url string) error
-	Find(key string) (string, error)
-}
-
 // InMemoryRepository реализует URLRepository для хранения данных в оперативной памяти.
 type InMemoryRepository struct {
-	mu    sync.RWMutex
-	store map[string]string
+	mu           sync.RWMutex
+	store        map[string]string
+	configParams config.Flags
 }
 
-func NewInMemoryRepository() *InMemoryRepository {
+func NewInMemoryRepository(configParams config.Flags) *InMemoryRepository {
 	return &InMemoryRepository{
-		store: make(map[string]string),
+		store:        make(map[string]string),
+		configParams: configParams,
 	}
 }
 
@@ -41,4 +39,8 @@ func (r *InMemoryRepository) Find(key string) (string, error) {
 		return "", fmt.Errorf("key not found %s: %w", key, ErrNotFound)
 	}
 	return url, nil
+}
+
+func (r *InMemoryRepository) Close() error {
+	return nil
 }
