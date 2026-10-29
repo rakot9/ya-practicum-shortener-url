@@ -30,12 +30,12 @@ func (m *mockRepo) Find(key string) (string, error) {
 	return val, nil
 }
 
-func initRepository(configParams config.Flags) repository.URLRepository {
+func initRepository(configParams config.Flags) service.URLRepository {
 	return repository.NewInMemoryRepository(configParams)
 }
 
 // Инициализация хендлера с mock сервисом
-func setupTestHandler(configParams config.Flags, storageRepo repository.URLRepository) *Handler {
+func setupTestHandler(configParams config.Flags, storageRepo service.URLRepository) *Handler {
 	service := service.NewURLService(storageRepo)
 
 	cfg := &FlagEnv{
