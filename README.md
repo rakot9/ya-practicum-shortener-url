@@ -42,3 +42,9 @@ git fetch template && git checkout template/v2 .github
 - **Clean Architecture**
 - **Hexagonal Architecture**
 - **Layered Architecture**
+
+
+Запуск тестов:
+8  shortenertest -test.v -test.run=^TestIteration8$ -binary-path=cmd/shortener/shortener -source-path=. -server-port=8080 -file-storage-path=storage.txt
+9  shortenertest -test.v -test.run=^TestIteration9$ -binary-path=cmd/shortener/shortener -source-path=. -server-port=8080 -file-storage-path=storage.txt
+10 shortenertest -test.v -test.run=^TestIteration10$ -binary-path=cmd/shortener/shortener -source-path=. -server-port=8080 -file-storage-path=storage.txt -database-dsn "postgres://velobos:test@127.0.0.1:5432/velobos?sslmode=disable"

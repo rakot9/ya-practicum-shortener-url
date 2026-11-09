@@ -3,9 +3,11 @@ package handler
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/config/db"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -35,7 +37,7 @@ func initRepository(configParams config.Flags) service.URLRepository {
 }
 
 // Инициализация хендлера с mock сервисом
-func setupTestHandler(configParams config.Flags, storageRepo service.URLRepository) *Handler {
+func setupTestHandler(configParams config.Flags, storageRepo service.URLRepository, dbStruct *db.DbStruct) *Handler {
 	service := service.NewURLService(storageRepo)
 
 	cfg := &FlagEnv{
@@ -43,7 +45,7 @@ func setupTestHandler(configParams config.Flags, storageRepo service.URLReposito
 		FlagRunShorternerAddr: configParams.FlagRunShorternerAddr,
 	}
 
-	return NewHandler(service, cfg)
+	return NewHandler(service, cfg, dbStruct)
 }
 
 func TestHandler_MainPage(t *testing.T) {
@@ -54,8 +56,13 @@ func TestHandler_MainPage(t *testing.T) {
 		FlagInMemoryStorage:   true,
 	}
 
+	zapLogger, _ := zap.NewProduction()
+	defer zapLogger.Sync()
+
+	dbStruct := db.Parse(flags.FlagDBDSN, zapLogger)
+
 	repo := initRepository(flags)
-	h := setupTestHandler(flags, repo)
+	h := setupTestHandler(flags, repo, dbStruct)
 
 	tests := []struct {
 		name         string
@@ -121,8 +128,13 @@ func TestHandler_PageByID(t *testing.T) {
 		FlagInMemoryStorage:   true,
 	}
 
+	zapLogger, _ := zap.NewProduction()
+	defer zapLogger.Sync()
+
+	dbStruct := db.Parse(flags.FlagDBDSN, zapLogger)
+
 	repo := initRepository(flags)
-	h := setupTestHandler(flags, repo)
+	h := setupTestHandler(flags, repo, dbStruct)
 
 	// Предзаполняем репозиторий для теста существующего ID
 	targetURL := "https://yandex.ru"

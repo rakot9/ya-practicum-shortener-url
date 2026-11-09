@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"github.com/go-chi/chi/v5"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/config/db"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"io"
@@ -20,12 +21,14 @@ type FlagEnv struct {
 type Handler struct {
 	urlService *service.URLService
 	flagEnv    *FlagEnv
+	dbStruct   *db.DbStruct
 }
 
-func NewHandler(urlService *service.URLService, flagEnv *FlagEnv) *Handler {
+func NewHandler(urlService *service.URLService, flagEnv *FlagEnv, dbStruct *db.DbStruct) *Handler {
 	return &Handler{
 		urlService: urlService,
 		flagEnv:    flagEnv,
+		dbStruct:   dbStruct,
 	}
 }
 
@@ -100,4 +103,17 @@ func (h *Handler) PageByID(res http.ResponseWriter, req *http.Request) {
 	}
 
 	http.Redirect(res, req, url, http.StatusTemporaryRedirect)
+}
+
+func (h *Handler) PingDB(res http.ResponseWriter, req *http.Request) {
+	if err := h.dbStruct.Pool.Ping(h.dbStruct.Ctx); err != nil {
+		slog.Error("db not accessable", slog.Any("error", err))
+
+		res.WriteHeader(http.StatusInternalServerError)
+		res.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+
+		return
+	}
+
+	res.WriteHeader(http.StatusOK)
 }

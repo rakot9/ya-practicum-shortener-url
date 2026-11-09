@@ -10,6 +10,7 @@ type Flags struct {
 	FlagRunShorternerAddr string
 	FlagFileStoragePath   string
 	FlagInMemoryStorage   bool
+	FlagDBDSN             string
 }
 
 func ParseFlags(args []string) Flags {
@@ -20,6 +21,7 @@ func ParseFlags(args []string) Flags {
 		FlagRunShorternerAddr: "",
 		FlagFileStoragePath:   "",
 		FlagInMemoryStorage:   false,
+		FlagDBDSN:             "",
 	}
 
 	fs.StringVar(&flags.FlagRunAddr, "a", "localhost:8080", "Адрес запуска http-сервера")
@@ -29,6 +31,8 @@ func ParseFlags(args []string) Flags {
 	fs.StringVar(&flags.FlagFileStoragePath, "f", "storage_shorten_url.txt", "Вывод логов в консоль")
 
 	fs.BoolVar(&flags.FlagInMemoryStorage, "m", false, "Хранение в памяти")
+
+	fs.StringVar(&flags.FlagDBDSN, "d", "", "DSN подключения к БД")
 
 	fs.Parse(args)
 
@@ -42,6 +46,10 @@ func ParseFlags(args []string) Flags {
 
 	if fileStoragePath := os.Getenv("FILE_STORAGE_PATH"); fileStoragePath != "" {
 		flags.FlagFileStoragePath = fileStoragePath
+	}
+
+	if dbDSN := os.Getenv("DATABASE_DSN"); dbDSN != "" {
+		flags.FlagDBDSN = dbDSN
 	}
 
 	return flags
