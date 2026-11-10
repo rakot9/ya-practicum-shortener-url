@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
+	"go.uber.org/zap"
 	"net/http"
 	"testing"
 	"time"
@@ -16,18 +17,26 @@ func Test_run(t *testing.T) {
 		w.Write([]byte("pong"))
 	})
 
+	// 1.
+	zapLogger, _ := zap.NewProduction()
+	defer zapLogger.Sync()
+
 	// 2. Конфигурируем тестовые флаги (используем свободный порт localhost)
 	testAddr := "localhost:8081"
 	flags := config.Flags{
 		FlagRunAddr:           testAddr,
 		FlagRunShorternerAddr: "localhost:8081",
-		FlagLog:               true,
+	}
+
+	app := &application{
+		logger:       zapLogger,
+		configParams: flags,
 	}
 
 	// 3. Запускаем сервер в отдельной горутине, чтобы он не заблокировал выполнение теста
 	errChan := make(chan error, 1)
 	go func() {
-		errChan <- run(r, flags)
+		errChan <- app.run(r)
 	}()
 
 	// Даем серверу небольшую задержку на запуск

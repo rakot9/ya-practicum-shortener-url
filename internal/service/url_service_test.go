@@ -22,7 +22,12 @@ func (m *MockURLRepository) Save(key, url string) error {
 	return args.Error(0)
 }
 
+func (m *MockURLRepository) Close() error {
+	return nil
+}
+
 func TestURLService_ShortenURL_Success(t *testing.T) {
+
 	mockRepo := new(MockURLRepository)
 	service := NewURLService(mockRepo)
 

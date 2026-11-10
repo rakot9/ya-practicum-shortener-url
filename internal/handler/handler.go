@@ -36,9 +36,17 @@ func (h *Handler) MainPage(res http.ResponseWriter, req *http.Request) {
 	}
 
 	req.Body = http.MaxBytesReader(res, req.Body, 1048576)
+	defer req.Body.Close()
 
 	bodyBytes, err := io.ReadAll(req.Body)
 	if err != nil {
+		var maxBytesErr *http.MaxBytesError
+
+		if errors.As(err, &maxBytesErr) {
+			http.Error(res, "Request Entity Too Large", http.StatusRequestEntityTooLarge)
+			return
+		}
+
 		http.Error(res, "Превышен размер тела сообщения: "+err.Error(), http.StatusBadRequest)
 		return
 	}

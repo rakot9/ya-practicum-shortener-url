@@ -12,13 +12,19 @@ const base62Alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123
 
 var ErrCountAttemptExceed = errors.New("count attempt exceed")
 
+type URLRepository interface {
+	Save(key, url string) error
+	Find(key string) (string, error)
+	Close() error
+}
+
 // URLService управляет бизнес-логикой генерации ключей и координирует работу с репозиторием.
 type URLService struct {
-	repo repository.URLRepository
+	repo URLRepository
 }
 
 // NewURLService принимает любой репозиторий, удовлетворяющий интерфейсу URLRepository.
-func NewURLService(repo repository.URLRepository) *URLService {
+func NewURLService(repo URLRepository) *URLService {
 	return &URLService{
 		repo: repo,
 	}

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"github.com/go-chi/chi/v5"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"github.com/stretchr/testify/assert"
@@ -29,22 +30,32 @@ func (m *mockRepo) Find(key string) (string, error) {
 	return val, nil
 }
 
+func initRepository(configParams config.Flags) service.URLRepository {
+	return repository.NewInMemoryRepository(configParams)
+}
+
 // Инициализация хендлера с mock сервисом
-func setupTestHandler() (*Handler, *mockRepo) {
-	repo := &mockRepo{storage: make(map[string]string)}
+func setupTestHandler(configParams config.Flags, storageRepo service.URLRepository) *Handler {
+	service := service.NewURLService(storageRepo)
 
-	urlService := service.NewURLService(repo)
-
-	flagEnv := &FlagEnv{
-		FlagRunAddr:           "localhost:8080",
-		FlagRunShorternerAddr: "http://localhost:8080",
+	cfg := &FlagEnv{
+		FlagRunAddr:           configParams.FlagRunAddr,
+		FlagRunShorternerAddr: configParams.FlagRunShorternerAddr,
 	}
 
-	return NewHandler(urlService, flagEnv), repo
+	return NewHandler(service, cfg)
 }
 
 func TestHandler_MainPage(t *testing.T) {
-	h, _ := setupTestHandler()
+	flags := config.Flags{
+		FlagRunAddr:           "localhost:8080",
+		FlagRunShorternerAddr: "http://localhost:8080",
+		FlagFileStoragePath:   "shortener.txt",
+		FlagInMemoryStorage:   true,
+	}
+
+	repo := initRepository(flags)
+	h := setupTestHandler(flags, repo)
 
 	tests := []struct {
 		name         string
@@ -103,7 +114,15 @@ func TestHandler_MainPage(t *testing.T) {
 }
 
 func TestHandler_PageByID(t *testing.T) {
-	h, repo := setupTestHandler()
+	flags := config.Flags{
+		FlagRunAddr:           "localhost:8080",
+		FlagRunShorternerAddr: "http://localhost:8080",
+		FlagFileStoragePath:   "shortener.txt",
+		FlagInMemoryStorage:   true,
+	}
+
+	repo := initRepository(flags)
+	h := setupTestHandler(flags, repo)
 
 	// Предзаполняем репозиторий для теста существующего ID
 	targetURL := "https://yandex.ru"
