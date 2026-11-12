@@ -17,7 +17,7 @@ import (
 type application struct {
 	logger       *zap.Logger
 	configParams config.Flags
-	dbStruct     *db.DbStruct
+	dbStruct     *db.DBStruct
 }
 
 func main() {

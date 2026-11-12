@@ -18,7 +18,7 @@ func initRepository(configParams config.Flags) service.URLRepository {
 }
 
 // Инициализация хендлера с mock сервисом
-func setupTestHandler(configParams config.Flags, storageRepo service.URLRepository, dbStruct *db.DbStruct) *handler.Handler {
+func setupTestHandler(configParams config.Flags, storageRepo service.URLRepository, dbStruct *db.DBStruct) *handler.Handler {
 	service := service.NewURLService(storageRepo)
 
 	cfg := &handler.FlagEnv{

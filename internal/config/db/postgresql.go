@@ -6,12 +6,12 @@ import (
 	"go.uber.org/zap"
 )
 
-type DbStruct struct {
+type DBStruct struct {
 	Pool *pgxpool.Pool
 	Ctx  context.Context
 }
 
-func Parse(dsn string, logger *zap.Logger) *DbStruct {
+func Parse(dsn string, logger *zap.Logger) *DBStruct {
 
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, dsn)
@@ -20,7 +20,7 @@ func Parse(dsn string, logger *zap.Logger) *DbStruct {
 		logger.Error("Не удалось создать пул соединений: ", zap.Error(err))
 	}
 
-	dbStruct := &DbStruct{
+	dbStruct := &DBStruct{
 		Pool: pool,
 		Ctx:  ctx,
 	}

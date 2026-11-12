@@ -13,7 +13,7 @@ import (
 
 type FileStorage struct {
 	UUID          string `json:"uuid"`
-	CorrelationId string `json:"uuid"`
+	CorrelationID string `json:"correlation_id"`
 	ShortURL      string `json:"short_url"`
 	OriginalURL   string `json:"original_url"`
 }
@@ -37,12 +37,12 @@ func NewFileStorgeRepository(configParams config.Flags) (*FileStorgeRepository, 
 	}, nil
 }
 
-func (r *FileStorgeRepository) Save(key string, URL string, correlationId string) error {
+func (r *FileStorgeRepository) Save(key string, URL string, correlationID string) error {
 	idV4 := uuid.New()
 
 	saveData := FileStorage{
 		UUID:          idV4.String(),
-		CorrelationId: correlationId,
+		CorrelationID: correlationID,
 		ShortURL:      key,
 		OriginalURL:   URL,
 	}

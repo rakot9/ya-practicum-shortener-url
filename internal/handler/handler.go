@@ -21,10 +21,10 @@ type FlagEnv struct {
 type Handler struct {
 	urlService *service.URLService
 	flagEnv    *FlagEnv
-	dbStruct   *db.DbStruct
+	dbStruct   *db.DBStruct
 }
 
-func NewHandler(urlService *service.URLService, flagEnv *FlagEnv, dbStruct *db.DbStruct) *Handler {
+func NewHandler(urlService *service.URLService, flagEnv *FlagEnv, dbStruct *db.DBStruct) *Handler {
 	return &Handler{
 		urlService: urlService,
 		flagEnv:    flagEnv,

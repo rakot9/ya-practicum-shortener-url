@@ -22,19 +22,18 @@ func NewDBStorgeRepository(ctx context.Context, pool *pgxpool.Pool) (*DBStorageR
 	}, nil
 }
 
-func (r *DBStorageRepository) Save(key string, URL string, correlationId string) error {
-	fmt.Print("Save db")
+func (r *DBStorageRepository) Save(key string, URL string, correlationID string) error {
 	idV4 := uuid.New()
 
-	var CorrelationId *string
+	var CorrelationIDDBValue *string
 
-	if correlationId != "" {
-		CorrelationId = &correlationId
+	if correlationID != "" {
+		CorrelationIDDBValue = &correlationID
 	}
 
 	query := `INSERT INTO shortener (uuid, correlation_id, short_url, original_url, created_at) VALUES ($1, $2, $3, $4, $5)`
 
-	_, err := r.pool.Exec(r.ctx, query, idV4, CorrelationId, key, URL, time.Now().Format("2006-01-02 15:04:05"))
+	_, err := r.pool.Exec(r.ctx, query, idV4, CorrelationIDDBValue, key, URL, time.Now().Format("2006-01-02 15:04:05"))
 	if err != nil {
 		return fmt.Errorf("не удалось создать запись в таблицы сокращения url: %w", err)
 	}
@@ -53,14 +52,11 @@ func (r *DBStorageRepository) Find(key string) (string, error) {
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", fmt.Errorf("%w", ErrNotFound)
 		}
-		fmt.Printf("error sql %w", err)
 		return "", fmt.Errorf("%w", ErrNotFound)
 	}
 	if URL.Valid {
 		return URL.String, nil
 	}
-
-	fmt.Print("Empty result")
 
 	return "", nil
 }

@@ -23,7 +23,7 @@ func NewInMemoryRepository(configParams config.Flags) *InMemoryRepository {
 	}
 }
 
-func (r *InMemoryRepository) Save(key string, url string, correlationId string) error {
+func (r *InMemoryRepository) Save(key string, url string, correlationID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.store[key] = url
