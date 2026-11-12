@@ -17,7 +17,7 @@ func (m *MockURLRepository) Find(key string) (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockURLRepository) Save(key string, url string, correlationId string) error {
+func (m *MockURLRepository) Save(key string, url string, correlationID string) error {
 	args := m.Called(key, url)
 	return args.Error(0)
 }
