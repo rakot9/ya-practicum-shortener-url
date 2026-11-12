@@ -58,7 +58,7 @@ func (h *Handler) MainPage(res http.ResponseWriter, req *http.Request) {
 
 	URLtoShorten := bodyText
 
-	key, err := h.urlService.ShortenURL(URLtoShorten)
+	key, err := h.urlService.ShortenURL(URLtoShorten, "")
 
 	if err != nil {
 		if errors.Is(err, service.ErrCountAttemptExceed) {

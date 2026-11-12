@@ -139,7 +139,7 @@ func TestHandler_PageByID(t *testing.T) {
 	// Предзаполняем репозиторий для теста существующего ID
 	targetURL := "https://yandex.ru"
 	existingID := "shortKey123"
-	_ = repo.Save(existingID, targetURL)
+	_ = repo.Save(existingID, targetURL, "")
 
 	tests := []struct {
 		name       string

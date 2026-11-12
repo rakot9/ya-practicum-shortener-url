@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,12 +22,19 @@ func NewDBStorgeRepository(ctx context.Context, pool *pgxpool.Pool) (*DBStorageR
 	}, nil
 }
 
-func (r *DBStorageRepository) Save(key string, URL string) error {
+func (r *DBStorageRepository) Save(key string, URL string, correlationId string) error {
+	fmt.Print("Save db")
 	idV4 := uuid.New()
 
-	query := `INSERT INTO shortener (uuid, short_url, original_url, created_at) VALUES ($1, $2, $3, $4)`
+	var CorrelationId *string
 
-	_, err := r.pool.Exec(r.ctx, query, idV4, key, URL, time.Now().Format("2006-01-02 15:04:05"))
+	if correlationId != "" {
+		CorrelationId = &correlationId
+	}
+
+	query := `INSERT INTO shortener (uuid, correlation_id, short_url, original_url, created_at) VALUES ($1, $2, $3, $4, $5)`
+
+	_, err := r.pool.Exec(r.ctx, query, idV4, CorrelationId, key, URL, time.Now().Format("2006-01-02 15:04:05"))
 	if err != nil {
 		return fmt.Errorf("не удалось создать запись в таблицы сокращения url: %w", err)
 	}
@@ -42,11 +50,17 @@ func (r *DBStorageRepository) Find(key string) (string, error) {
 	var URL sql.NullString
 	err := row.Scan(&URL)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", fmt.Errorf("%w", ErrNotFound)
+		}
+		fmt.Printf("error sql %w", err)
 		return "", fmt.Errorf("%w", ErrNotFound)
 	}
 	if URL.Valid {
 		return URL.String, nil
 	}
+
+	fmt.Print("Empty result")
 
 	return "", nil
 }

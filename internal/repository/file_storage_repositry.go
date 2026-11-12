@@ -12,9 +12,10 @@ import (
 )
 
 type FileStorage struct {
-	UUID        string `json:"uuid"`
-	ShortURL    string `json:"short_url"`
-	OriginalURL string `json:"original_url"`
+	UUID          string `json:"uuid"`
+	CorrelationId string `json:"uuid"`
+	ShortURL      string `json:"short_url"`
+	OriginalURL   string `json:"original_url"`
 }
 
 // FileStorgeRepository реализует URLRepository для хранения данных в оперативной памяти.
@@ -36,13 +37,14 @@ func NewFileStorgeRepository(configParams config.Flags) (*FileStorgeRepository, 
 	}, nil
 }
 
-func (r *FileStorgeRepository) Save(key string, URL string) error {
+func (r *FileStorgeRepository) Save(key string, URL string, correlationId string) error {
 	idV4 := uuid.New()
 
 	saveData := FileStorage{
-		UUID:        idV4.String(),
-		ShortURL:    key,
-		OriginalURL: URL,
+		UUID:          idV4.String(),
+		CorrelationId: correlationId,
+		ShortURL:      key,
+		OriginalURL:   URL,
 	}
 
 	data, err := json.Marshal(saveData)

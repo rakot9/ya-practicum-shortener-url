@@ -13,7 +13,7 @@ const base62Alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123
 var ErrCountAttemptExceed = errors.New("count attempt exceed")
 
 type URLRepository interface {
-	Save(key, url string) error
+	Save(key string, url string, correlationId string) error
 	Find(key string) (string, error)
 	Close() error
 }
@@ -31,7 +31,7 @@ func NewURLService(repo URLRepository) *URLService {
 }
 
 // ShortenURL генерирует уникальный ключ и сохраняет его в репозиторий.
-func (s *URLService) ShortenURL(url string) (string, error) {
+func (s *URLService) ShortenURL(url string, correlationId string) (string, error) {
 	for i := 10; i > 0; i-- {
 		key, err := s.generateKey()
 		if err != nil {
@@ -42,7 +42,7 @@ func (s *URLService) ShortenURL(url string) (string, error) {
 		_, err = s.repo.Find(key)
 		if errors.Is(err, repository.ErrNotFound) {
 			// Ключ свободен, сохраняем и выходим из цикла
-			if err := s.repo.Save(key, url); err != nil {
+			if err := s.repo.Save(key, url, correlationId); err != nil {
 				return "", fmt.Errorf("failed to save url: %w", err)
 			}
 			return key, nil

@@ -19,6 +19,7 @@ func Router(h *handler.Handler, zapLogger *zap.Logger) chi.Router {
 
 	// call handlers
 	r.Post("/api/shorten", h.APIShortURL)
+	r.Post("/api/shorten/batch", h.APIShortURLBatch)
 	r.Get("/{id}", h.PageByID)
 	r.Get("/ping", h.PingDB)
 	r.Post("/", h.MainPage)
