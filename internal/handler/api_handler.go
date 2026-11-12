@@ -44,14 +44,21 @@ func (h *Handler) APIShortURL(res http.ResponseWriter, req *http.Request) {
 
 	key, err := h.urlService.ShortenURL(shortURL.URL, "")
 
+	isSetOriginalURLInStorage := false
 	if err != nil {
+		if errors.Is(err, service.ErrOriginalURLAlreadyExist) {
+			isSetOriginalURLInStorage = true
+		}
 		if errors.Is(err, service.ErrCountAttemptExceed) {
 			slog.Error("count attempt (10) exceed for generate key. URL", slog.Any("error", err))
 			http.Error(res, "server error", http.StatusInternalServerError)
 			return
 		}
-		http.Error(res, "internal server error", http.StatusInternalServerError)
-		return
+
+		if !isSetOriginalURLInStorage {
+			http.Error(res, "internal server error", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	url, err := url.JoinPath(h.flagEnv.FlagRunShorternerAddr, key)
@@ -71,7 +78,12 @@ func (h *Handler) APIShortURL(res http.ResponseWriter, req *http.Request) {
 	}
 
 	res.Header().Set("Content-Type", "application/json")
-	res.WriteHeader(http.StatusCreated)
+
+	if isSetOriginalURLInStorage {
+		res.WriteHeader(http.StatusConflict)
+	} else {
+		res.WriteHeader(http.StatusCreated)
+	}
 
 	res.Write(resp)
 }

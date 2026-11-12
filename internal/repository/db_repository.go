@@ -65,6 +65,26 @@ func (r *DBStorageRepository) Find(key string) (string, error) {
 	return "", nil
 }
 
+func (r *DBStorageRepository) FindByOriginalURL(URL string) (string, error) {
+	row := r.pool.QueryRow(r.ctx,
+		"SELECT short_url FROM shortener WHERE original_url = $1 ORDER BY created_at DESC", URL)
+
+	// готовим переменную для чтения результата
+	var shortURL sql.NullString
+	err := row.Scan(&shortURL)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", fmt.Errorf("%w", ErrNotFound)
+		}
+		return "", fmt.Errorf("%w", ErrNotFound)
+	}
+	if shortURL.Valid {
+		return shortURL.String, nil
+	}
+
+	return "", nil
+}
+
 func (r *DBStorageRepository) Close() error {
 	defer r.pool.Close()
 	return nil

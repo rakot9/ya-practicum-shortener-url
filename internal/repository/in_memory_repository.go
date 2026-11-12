@@ -41,6 +41,10 @@ func (r *InMemoryRepository) Find(key string) (string, error) {
 	return url, nil
 }
 
+func (r *InMemoryRepository) FindByOriginalURL(URL string) (string, error) {
+	return "", nil
+}
+
 func (r *InMemoryRepository) Close() error {
 	return nil
 }

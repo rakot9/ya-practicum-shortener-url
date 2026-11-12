@@ -94,6 +94,10 @@ func (r *FileStorgeRepository) Find(key string) (string, error) {
 	return "", fmt.Errorf("key not found in storage file %s: %w", key, ErrNotFound)
 }
 
+func (r *FileStorgeRepository) FindByOriginalURL(URL string) (string, error) {
+	return "", nil
+}
+
 func (r *FileStorgeRepository) Close() error {
 	if r.file != nil {
 		return r.file.Close()

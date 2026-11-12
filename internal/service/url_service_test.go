@@ -22,6 +22,10 @@ func (m *MockURLRepository) Save(key string, url string, correlationId string) e
 	return args.Error(0)
 }
 
+func (m *MockURLRepository) FindByOriginalURL(URL string) (string, error) {
+	return "", nil
+}
+
 func (m *MockURLRepository) Close() error {
 	return nil
 }
