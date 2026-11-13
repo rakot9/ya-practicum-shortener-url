@@ -16,6 +16,34 @@ type DBStorageRepository struct {
 }
 
 func NewDBStorgeRepository(ctx context.Context, pool *pgxpool.Pool) (*DBStorageRepository, error) {
+
+	// initCtx, cancel := context.WithTimeout(ctx, time.Second)
+	// defer cancel()
+
+	// SQL-запрос на создание таблицы в схеме public
+	query := `
+		CREATE TABLE IF NOT EXISTS shortener (
+			id SERIAL PRIMARY KEY,
+			uuid VARCHAR(36) NOT NULL,
+			correlation_id VARCHAR(36) NULL,
+			short_url VARCHAR(255) NOT NULL,
+			original_url text NOT NULL,
+			created_at timestamp NOT NULL
+		);
+	`
+
+	_, err := pool.Exec(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create table urls: %w", err)
+	}
+
+	createIndexQuery := `
+		CREATE INDEX IF NOT EXISTS idx_original_url ON shortener(original_url);
+	`
+	if _, err := pool.Exec(ctx, createIndexQuery); err != nil {
+		return nil, fmt.Errorf("failed to create index idx_original_url: %w", err)
+	}
+
 	return &DBStorageRepository{
 		ctx:  ctx,
 		pool: pool,
