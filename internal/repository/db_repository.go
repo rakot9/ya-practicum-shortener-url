@@ -17,9 +17,7 @@ type DBStorageRepository struct {
 
 func NewDBStorgeRepository(ctx context.Context, pool *pgxpool.Pool) (*DBStorageRepository, error) {
 
-	// initCtx, cancel := context.WithTimeout(ctx, time.Second)
-	// defer cancel()
-
+	// Это дичь но миграции не запускаются в тесте, поэтому я включил запросы вот сюда!!!
 	// SQL-запрос на создание таблицы в схеме public
 	query := `
 		CREATE TABLE IF NOT EXISTS shortener (
