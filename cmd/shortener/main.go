@@ -80,27 +80,27 @@ func (app *application) initRepository() service.URLRepository {
 
 	if app.configParams.FlagInMemoryStorage {
 		repo = repository.NewInMemoryRepository(app.configParams)
-	}
-
-	if app.configParams.FlagDBDSN != "" {
-		// DB repo
-		repo, err = repository.NewDBStorgeRepository(app.dbStruct.Ctx, app.dbStruct.Pool)
-
-		if err != nil {
-			slog.Error("Ошибка при инициализации репозитория DB: ", slog.Any("error", err))
-			os.Exit(1)
-		}
 	} else {
-		if app.configParams.FlagFileStoragePath != "" {
-			repo, err = repository.NewFileStorgeRepository(app.configParams)
+		if app.configParams.FlagDBDSN != "" {
+			// DB repo
+			repo, err = repository.NewDBStorgeRepository(app.dbStruct.Ctx, app.dbStruct.Pool)
 
 			if err != nil {
-				slog.Error("Ошибка при инициализации репозитория хранилищац файлов: ", slog.Any("error", err))
+				slog.Error("Ошибка при инициализации репозитория DB: ", slog.Any("error", err))
 				os.Exit(1)
 			}
 		} else {
-			app.logger.Error("Не указан режим работы приложения")
-			os.Exit(1)
+			if app.configParams.FlagFileStoragePath != "" {
+				repo, err = repository.NewFileStorgeRepository(app.configParams)
+
+				if err != nil {
+					slog.Error("Ошибка при инициализации репозитория хранилищац файлов: ", slog.Any("error", err))
+					os.Exit(1)
+				}
+			} else {
+				app.logger.Error("Не указан режим работы приложения")
+				os.Exit(1)
+			}
 		}
 	}
 
