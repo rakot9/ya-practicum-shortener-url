@@ -3,6 +3,7 @@ package handler
 import (
 	"errors"
 	"github.com/go-chi/chi/v5"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/config/db"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"io"
@@ -20,12 +21,14 @@ type FlagEnv struct {
 type Handler struct {
 	urlService *service.URLService
 	flagEnv    *FlagEnv
+	dbStruct   *db.DBStruct
 }
 
-func NewHandler(urlService *service.URLService, flagEnv *FlagEnv) *Handler {
+func NewHandler(urlService *service.URLService, flagEnv *FlagEnv, dbStruct *db.DBStruct) *Handler {
 	return &Handler{
 		urlService: urlService,
 		flagEnv:    flagEnv,
+		dbStruct:   dbStruct,
 	}
 }
 
@@ -55,16 +58,25 @@ func (h *Handler) MainPage(res http.ResponseWriter, req *http.Request) {
 
 	URLtoShorten := bodyText
 
-	key, err := h.urlService.ShortenURL(URLtoShorten)
+	key, err := h.urlService.ShortenURL(URLtoShorten, "")
+
+	isSetOriginalURLInStorage := false
 
 	if err != nil {
+		if errors.Is(err, service.ErrOriginalURLAlreadyExist) {
+			isSetOriginalURLInStorage = true
+		}
+
 		if errors.Is(err, service.ErrCountAttemptExceed) {
 			slog.Error("count attempt (10) exceed for generate key. URL", slog.Any("error", err))
 			http.Error(res, "server error", http.StatusInternalServerError)
 			return
 		}
-		http.Error(res, "server error", http.StatusBadRequest)
-		return
+
+		if !isSetOriginalURLInStorage {
+			http.Error(res, "internal server error", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	url, err := url.JoinPath(h.flagEnv.FlagRunShorternerAddr, key)
@@ -75,7 +87,12 @@ func (h *Handler) MainPage(res http.ResponseWriter, req *http.Request) {
 	}
 
 	res.Header().Set("Content-Type", "text/plain")
-	res.WriteHeader(http.StatusCreated)
+
+	if isSetOriginalURLInStorage {
+		res.WriteHeader(http.StatusConflict)
+	} else {
+		res.WriteHeader(http.StatusCreated)
+	}
 
 	res.Write([]byte(url))
 }
@@ -100,4 +117,17 @@ func (h *Handler) PageByID(res http.ResponseWriter, req *http.Request) {
 	}
 
 	http.Redirect(res, req, url, http.StatusTemporaryRedirect)
+}
+
+func (h *Handler) PingDB(res http.ResponseWriter, req *http.Request) {
+	if err := h.dbStruct.Pool.Ping(h.dbStruct.Ctx); err != nil {
+		slog.Error("db not accessable", slog.Any("error", err))
+
+		res.WriteHeader(http.StatusInternalServerError)
+		res.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+
+		return
+	}
+
+	res.WriteHeader(http.StatusOK)
 }

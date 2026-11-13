@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/config/db"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/handler"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/router"
@@ -16,6 +17,7 @@ import (
 type application struct {
 	logger       *zap.Logger
 	configParams config.Flags
+	dbStruct     *db.DBStruct
 }
 
 func main() {
@@ -30,9 +32,13 @@ func main() {
 	zapLogger, _ := zap.NewProduction()
 	defer zapLogger.Sync()
 
+	// configure DB connecton
+	dbStruct := db.Parse(flags.FlagDBDSN, zapLogger)
+
 	app := &application{
 		logger:       zapLogger,
 		configParams: flags,
+		dbStruct:     dbStruct,
 	}
 
 	// init storage repository
@@ -65,7 +71,7 @@ func (app *application) configureHandler(storageRepo service.URLRepository) *han
 		FlagRunShorternerAddr: app.configParams.FlagRunShorternerAddr,
 	}
 
-	return handler.NewHandler(service, cfg)
+	return handler.NewHandler(service, cfg, app.dbStruct)
 }
 
 func (app *application) initRepository() service.URLRepository {
@@ -75,16 +81,26 @@ func (app *application) initRepository() service.URLRepository {
 	if app.configParams.FlagInMemoryStorage {
 		repo = repository.NewInMemoryRepository(app.configParams)
 	} else {
-		if app.configParams.FlagFileStoragePath != "" {
-			repo, err = repository.NewFileStorgeRepository(app.configParams)
+		if app.configParams.FlagDBDSN != "" {
+			// DB repo
+			repo, err = repository.NewDBStorgeRepository(app.dbStruct.Ctx, app.dbStruct.Pool)
 
 			if err != nil {
-				slog.Error("Ошибка при инициализации репозитория хранилищац файлов: ", slog.Any("error", err))
+				slog.Error("Ошибка при инициализации репозитория DB: ", slog.Any("error", err))
 				os.Exit(1)
 			}
 		} else {
-			app.logger.Error("Не указан режим работы приложения")
-			os.Exit(1)
+			if app.configParams.FlagFileStoragePath != "" {
+				repo, err = repository.NewFileStorgeRepository(app.configParams)
+
+				if err != nil {
+					slog.Error("Ошибка при инициализации репозитория хранилищац файлов: ", slog.Any("error", err))
+					os.Exit(1)
+				}
+			} else {
+				app.logger.Error("Не указан режим работы приложения")
+				os.Exit(1)
+			}
 		}
 	}
 

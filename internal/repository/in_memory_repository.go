@@ -23,7 +23,7 @@ func NewInMemoryRepository(configParams config.Flags) *InMemoryRepository {
 	}
 }
 
-func (r *InMemoryRepository) Save(key, url string) error {
+func (r *InMemoryRepository) Save(key string, url string, correlationID string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.store[key] = url
@@ -39,6 +39,10 @@ func (r *InMemoryRepository) Find(key string) (string, error) {
 		return "", fmt.Errorf("key not found %s: %w", key, ErrNotFound)
 	}
 	return url, nil
+}
+
+func (r *InMemoryRepository) FindByOriginalURL(URL string) (string, error) {
+	return "", nil
 }
 
 func (r *InMemoryRepository) Close() error {

@@ -2,6 +2,8 @@ package handler
 
 import (
 	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/config/db"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -19,8 +21,13 @@ func TestHandler_ApiShortURL(t *testing.T) {
 		FlagInMemoryStorage:   true,
 	}
 
+	zapLogger, _ := zap.NewProduction()
+	defer zapLogger.Sync()
+
+	dbStruct := db.Parse(flags.FlagDBDSN, zapLogger)
+
 	repo := initRepository(flags)
-	h := setupTestHandler(flags, repo)
+	h := setupTestHandler(flags, repo, dbStruct)
 
 	tests := []struct {
 		name         string
