@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/config/db"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/handler"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
@@ -17,7 +18,7 @@ func initRepository(configParams config.Flags) service.URLRepository {
 }
 
 // Инициализация хендлера с mock сервисом
-func setupTestHandler(configParams config.Flags, storageRepo service.URLRepository) *handler.Handler {
+func setupTestHandler(configParams config.Flags, storageRepo service.URLRepository, dbStruct *db.DBStruct) *handler.Handler {
 	service := service.NewURLService(storageRepo)
 
 	cfg := &handler.FlagEnv{
@@ -25,7 +26,7 @@ func setupTestHandler(configParams config.Flags, storageRepo service.URLReposito
 		FlagRunShorternerAddr: configParams.FlagRunShorternerAddr,
 	}
 
-	return handler.NewHandler(service, cfg)
+	return handler.NewHandler(service, cfg, dbStruct)
 }
 
 func TestRouter(t *testing.T) {
@@ -39,8 +40,10 @@ func TestRouter(t *testing.T) {
 	zapLogger, _ := zap.NewProduction()
 	defer zapLogger.Sync()
 
+	dbStruct := db.Parse(flags.FlagDBDSN, zapLogger)
+
 	repo := initRepository(flags)
-	h := setupTestHandler(flags, repo)
+	h := setupTestHandler(flags, repo, dbStruct)
 
 	r := Router(h, zapLogger)
 

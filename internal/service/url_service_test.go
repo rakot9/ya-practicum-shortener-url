@@ -17,9 +17,13 @@ func (m *MockURLRepository) Find(key string) (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockURLRepository) Save(key, url string) error {
+func (m *MockURLRepository) Save(key string, url string, correlationID string) error {
 	args := m.Called(key, url)
 	return args.Error(0)
+}
+
+func (m *MockURLRepository) FindByOriginalURL(URL string) (string, error) {
+	return "", nil
 }
 
 func (m *MockURLRepository) Close() error {
@@ -39,7 +43,7 @@ func TestURLService_ShortenURL_Success(t *testing.T) {
 	mockRepo.On("Find", mock.AnythingOfType("string")).Return("", repository.ErrNotFound).Once()
 	mockRepo.On("Save", mock.AnythingOfType("string"), targetURL).Return(nil).Once()
 
-	key, err := service.ShortenURL(targetURL)
+	key, err := service.ShortenURL(targetURL, "")
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, key)
@@ -63,7 +67,7 @@ func TestURLService_ShortenURL_CollisionResolved(t *testing.T) {
 	mockRepo.On("Find", mock.AnythingOfType("string")).Return("", repository.ErrNotFound).Once()
 	mockRepo.On("Save", mock.AnythingOfType("string"), targetURL).Return(nil).Once()
 
-	key, err := service.ShortenURL(targetURL)
+	key, err := service.ShortenURL(targetURL, "")
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, key)
@@ -79,7 +83,7 @@ func TestURLService_ShortenURL_AttemptsExceeded(t *testing.T) {
 	// Симулируем жесткую коллизию: все 10 раз Find возвращает существующий URL
 	mockRepo.On("Find", mock.AnythingOfType("string")).Return("https://existing.com", nil).Times(10)
 
-	key, err := service.ShortenURL(targetURL)
+	key, err := service.ShortenURL(targetURL, "")
 
 	assert.Empty(t, key)
 	assert.Error(t, err)
@@ -97,7 +101,7 @@ func TestURLService_ShortenURL_RepoFindError(t *testing.T) {
 	// Симулируем критическую ошибку БД при поиске ключа
 	mockRepo.On("Find", mock.AnythingOfType("string")).Return("", dbErr).Once()
 
-	key, err := service.ShortenURL(targetURL)
+	key, err := service.ShortenURL(targetURL, "")
 
 	assert.Empty(t, key)
 	assert.Error(t, err)
@@ -116,7 +120,7 @@ func TestURLService_ShortenURL_RepoSaveError(t *testing.T) {
 	mockRepo.On("Find", mock.AnythingOfType("string")).Return("", repository.ErrNotFound).Once()
 	mockRepo.On("Save", mock.AnythingOfType("string"), targetURL).Return(dbErr).Once()
 
-	key, err := service.ShortenURL(targetURL)
+	key, err := service.ShortenURL(targetURL, "")
 
 	assert.Empty(t, key)
 	assert.Error(t, err)
