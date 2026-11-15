@@ -26,7 +26,8 @@ func ParseFlags(args []string) Flags {
 		defaultBaseURL = envBaseURL
 	}
 
-	defaultFileStorage := "storage_shorten_url.txt"
+	//defaultFileStorage := "storage_shorten_url.txt"
+	var defaultFileStorage string = ""
 	if envFileStorage := os.Getenv("FILE_STORAGE_PATH"); envFileStorage != "" {
 		defaultFileStorage = envFileStorage
 	}
