@@ -6,7 +6,7 @@ import (
 	"errors"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/model"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
-	"log/slog"
+	"go.uber.org/zap"
 	"net/http"
 	"net/url"
 	"strings"
@@ -50,7 +50,7 @@ func (h *Handler) APIShortURL(res http.ResponseWriter, req *http.Request) {
 			isSetOriginalURLInStorage = true
 		}
 		if errors.Is(err, service.ErrCountAttemptExceed) {
-			slog.Error("count attempt (10) exceed for generate key. URL", slog.Any("error", err))
+			h.logger.Error("count attempt (10) exceed for generate key. URL", zap.Error(err))
 			http.Error(res, "server error", http.StatusInternalServerError)
 			return
 		}
@@ -134,7 +134,7 @@ func (h *Handler) APIShortURLBatch(res http.ResponseWriter, req *http.Request) {
 
 		if err != nil {
 			if errors.Is(err, service.ErrCountAttemptExceed) {
-				slog.Error("count attempt (10) exceed for generate key. URL", slog.Any("error", err))
+				h.logger.Error("count attempt (10) exceed for generate key. URL", zap.Error(err))
 				http.Error(res, "server error", http.StatusInternalServerError)
 				return
 			}

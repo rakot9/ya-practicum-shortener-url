@@ -18,7 +18,7 @@ func initRepository(configParams config.Flags) service.URLRepository {
 }
 
 // Инициализация хендлера с mock сервисом
-func setupTestHandler(configParams config.Flags, storageRepo service.URLRepository, dbStruct *db.DBStruct) *handler.Handler {
+func setupTestHandler(configParams config.Flags, storageRepo service.URLRepository, dbStruct *db.DBStruct, logger *zap.Logger) *handler.Handler {
 	service := service.NewURLService(storageRepo)
 
 	cfg := &handler.FlagEnv{
@@ -26,7 +26,7 @@ func setupTestHandler(configParams config.Flags, storageRepo service.URLReposito
 		FlagRunShorternerAddr: configParams.FlagRunShorternerAddr,
 	}
 
-	return handler.NewHandler(service, cfg, dbStruct)
+	return handler.NewHandler(service, cfg, dbStruct, logger)
 }
 
 func TestRouter(t *testing.T) {
@@ -43,7 +43,7 @@ func TestRouter(t *testing.T) {
 	dbStruct := db.Parse(flags.FlagDBDSN, zapLogger)
 
 	repo := initRepository(flags)
-	h := setupTestHandler(flags, repo, dbStruct)
+	h := setupTestHandler(flags, repo, dbStruct, zapLogger)
 
 	r := Router(h, zapLogger)
 

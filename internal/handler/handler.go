@@ -6,8 +6,8 @@ import (
 	"github.com/rakot9/ya-practicum-shortener-url/internal/config/db"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
+	"go.uber.org/zap"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -22,13 +22,15 @@ type Handler struct {
 	urlService *service.URLService
 	flagEnv    *FlagEnv
 	dbStruct   *db.DBStruct
+	logger     *zap.Logger
 }
 
-func NewHandler(urlService *service.URLService, flagEnv *FlagEnv, dbStruct *db.DBStruct) *Handler {
+func NewHandler(urlService *service.URLService, flagEnv *FlagEnv, dbStruct *db.DBStruct, logger *zap.Logger) *Handler {
 	return &Handler{
 		urlService: urlService,
 		flagEnv:    flagEnv,
 		dbStruct:   dbStruct,
+		logger:     logger,
 	}
 }
 
@@ -68,7 +70,7 @@ func (h *Handler) MainPage(res http.ResponseWriter, req *http.Request) {
 		}
 
 		if errors.Is(err, service.ErrCountAttemptExceed) {
-			slog.Error("count attempt (10) exceed for generate key. URL", slog.Any("error", err))
+			h.logger.Error("count attempt (10) exceed for generate key. URL", zap.Error(err))
 			http.Error(res, "server error", http.StatusInternalServerError)
 			return
 		}
@@ -108,7 +110,7 @@ func (h *Handler) PageByID(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		slog.Error("error find key.", slog.Any("error", err))
+		h.logger.Error("error find key", zap.Error(err))
 
 		res.WriteHeader(http.StatusInternalServerError)
 		res.Write([]byte(http.StatusText(http.StatusInternalServerError)))
@@ -121,7 +123,7 @@ func (h *Handler) PageByID(res http.ResponseWriter, req *http.Request) {
 
 func (h *Handler) PingDB(res http.ResponseWriter, req *http.Request) {
 	if err := h.dbStruct.Pool.Ping(h.dbStruct.Ctx); err != nil {
-		slog.Error("db not accessable", slog.Any("error", err))
+		h.logger.Error("db not accessable", zap.Error(err))
 
 		res.WriteHeader(http.StatusInternalServerError)
 		res.Write([]byte(http.StatusText(http.StatusInternalServerError)))

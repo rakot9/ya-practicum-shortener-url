@@ -37,7 +37,7 @@ func initRepository(configParams config.Flags) service.URLRepository {
 }
 
 // Инициализация хендлера с mock сервисом
-func setupTestHandler(configParams config.Flags, storageRepo service.URLRepository, dbStruct *db.DBStruct) *Handler {
+func setupTestHandler(configParams config.Flags, storageRepo service.URLRepository, dbStruct *db.DBStruct, logger *zap.Logger) *Handler {
 	service := service.NewURLService(storageRepo)
 
 	cfg := &FlagEnv{
@@ -45,7 +45,7 @@ func setupTestHandler(configParams config.Flags, storageRepo service.URLReposito
 		FlagRunShorternerAddr: configParams.FlagRunShorternerAddr,
 	}
 
-	return NewHandler(service, cfg, dbStruct)
+	return NewHandler(service, cfg, dbStruct, logger)
 }
 
 func TestHandler_MainPage(t *testing.T) {
@@ -62,7 +62,7 @@ func TestHandler_MainPage(t *testing.T) {
 	dbStruct := db.Parse(flags.FlagDBDSN, zapLogger)
 
 	repo := initRepository(flags)
-	h := setupTestHandler(flags, repo, dbStruct)
+	h := setupTestHandler(flags, repo, dbStruct, zapLogger)
 
 	tests := []struct {
 		name         string
@@ -134,7 +134,7 @@ func TestHandler_PageByID(t *testing.T) {
 	dbStruct := db.Parse(flags.FlagDBDSN, zapLogger)
 
 	repo := initRepository(flags)
-	h := setupTestHandler(flags, repo, dbStruct)
+	h := setupTestHandler(flags, repo, dbStruct, zapLogger)
 
 	// Предзаполняем репозиторий для теста существующего ID
 	targetURL := "https://yandex.ru"

@@ -27,7 +27,7 @@ func TestHandler_ApiShortURL(t *testing.T) {
 	dbStruct := db.Parse(flags.FlagDBDSN, zapLogger)
 
 	repo := initRepository(flags)
-	h := setupTestHandler(flags, repo, dbStruct)
+	h := setupTestHandler(flags, repo, dbStruct, zapLogger)
 
 	tests := []struct {
 		name         string

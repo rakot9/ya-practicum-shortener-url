@@ -9,7 +9,6 @@ import (
 	"github.com/rakot9/ya-practicum-shortener-url/internal/router"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"go.uber.org/zap"
-	"log/slog"
 	"net/http"
 	"os"
 )
@@ -23,10 +22,6 @@ type application struct {
 func main() {
 	// get configuration to run app
 	flags := config.ParseFlags(os.Args[1:])
-
-	// init Slog
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	slog.SetDefault(logger)
 
 	// configure logger
 	zapLogger, _ := zap.NewProduction()
@@ -53,12 +48,12 @@ func main() {
 	// close openned file handler
 	defer func() {
 		if err := storageRepo.Close(); err != nil {
-			slog.Error("Ошибка при закрытии файла хранилища: ", slog.Any("error", err))
+			app.logger.Error("Ошибка при закрытии файла хранилища: ", zap.Error(err))
 		}
 	}()
 
 	if err := app.run(router); err != nil {
-		slog.Error("failed to load configuration. Error: ", slog.Any("error", err))
+		app.logger.Error("Ошибка при загрузке конфигурации: ", zap.Error(err))
 		os.Exit(1)
 	}
 }
@@ -71,7 +66,7 @@ func (app *application) configureHandler(storageRepo service.URLRepository) *han
 		FlagRunShorternerAddr: app.configParams.FlagRunShorternerAddr,
 	}
 
-	return handler.NewHandler(service, cfg, app.dbStruct)
+	return handler.NewHandler(service, cfg, app.dbStruct, app.logger)
 }
 
 func (app *application) initRepository() service.URLRepository {
@@ -86,7 +81,7 @@ func (app *application) initRepository() service.URLRepository {
 			repo, err = repository.NewDBStorgeRepository(app.dbStruct.Ctx, app.dbStruct.Pool)
 
 			if err != nil {
-				slog.Error("Ошибка при инициализации репозитория DB: ", slog.Any("error", err))
+				app.logger.Error("Ошибка при инициализации репозитория DB: ", zap.Error(err))
 				os.Exit(1)
 			}
 		} else {
@@ -94,7 +89,7 @@ func (app *application) initRepository() service.URLRepository {
 				repo, err = repository.NewFileStorgeRepository(app.configParams)
 
 				if err != nil {
-					slog.Error("Ошибка при инициализации репозитория хранилищац файлов: ", slog.Any("error", err))
+					app.logger.Error("Ошибка при инициализации репозитория хранилищац файлов: ", zap.Error(err))
 					os.Exit(1)
 				}
 			} else {
