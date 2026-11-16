@@ -16,6 +16,7 @@ import (
 type FlagEnv struct {
 	FlagRunAddr           string
 	FlagRunShorternerAddr string
+	FlagDBDSN             string
 }
 
 type Handler struct {
@@ -122,14 +123,28 @@ func (h *Handler) PageByID(res http.ResponseWriter, req *http.Request) {
 }
 
 func (h *Handler) PingDB(res http.ResponseWriter, req *http.Request) {
-	if err := h.dbStruct.Pool.Ping(h.dbStruct.Ctx); err != nil {
-		h.logger.Error("db not accessable", zap.Error(err))
 
-		res.WriteHeader(http.StatusInternalServerError)
-		res.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+	status := http.StatusOK
 
-		return
+	if h.flagEnv.FlagDBDSN == "" {
+		status = http.StatusOK
+	} else {
+		if h.dbStruct.Pool == nil {
+			status = http.StatusOK
+		} else {
+			if err := h.dbStruct.Pool.Ping(h.dbStruct.Ctx); err != nil {
+
+				h.logger.Error("db not accessable", zap.Error(err))
+
+				status = http.StatusInternalServerError
+
+				res.WriteHeader(status)
+				res.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+
+				return
+			}
+		}
 	}
 
-	res.WriteHeader(http.StatusOK)
+	res.WriteHeader(status)
 }

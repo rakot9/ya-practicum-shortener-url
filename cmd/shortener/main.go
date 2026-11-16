@@ -65,6 +65,7 @@ func (app *application) configureHandler(storageRepo service.URLRepository) *han
 	cfg := &handler.FlagEnv{
 		FlagRunAddr:           app.configParams.FlagRunAddr,
 		FlagRunShorternerAddr: app.configParams.FlagRunShorternerAddr,
+		FlagDBDSN:             app.configParams.FlagDBDSN,
 	}
 
 	return handler.NewHandler(service, cfg, app.dbStruct, app.logger)
