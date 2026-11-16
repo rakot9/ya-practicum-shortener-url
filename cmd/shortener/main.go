@@ -8,6 +8,7 @@ import (
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/router"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
+	"github.com/rakot9/ya-practicum-shortener-url/migrations"
 	"go.uber.org/zap"
 	"net/http"
 	"os"
@@ -82,6 +83,12 @@ func (app *application) initRepository() service.URLRepository {
 			app.logger.Error("Ошибка при инициализации репозитория DB: ", zap.Error(err))
 			os.Exit(1)
 		}
+
+		if err := migrations.Run(app.configParams.FlagDBDSN); err != nil {
+			app.logger.Error("Не удалось применить миграции", zap.Error(err))
+		}
+
+		app.logger.Info("Миграции актуальны, запускаем приложение...")
 	} else {
 		if app.configParams.FlagFileStoragePath != "" {
 			repo, err = repository.NewFileStorgeRepository(app.configParams)

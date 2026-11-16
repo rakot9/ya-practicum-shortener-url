@@ -43,7 +43,10 @@ git fetch template && git checkout template/v2 .github
 - **Hexagonal Architecture**
 - **Layered Architecture**
 
-Запуск приложения:
+Запуск приложения с файловым хранилищем:
+go run . -f "test.txt"
+
+Запуск приложения с БД:
 go run . -d "postgres://velobos:test@127.0.0.1:5432/velobos?sslmode=disable"
 
 Запуск тестов:
