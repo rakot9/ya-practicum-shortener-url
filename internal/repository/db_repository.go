@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"time"
 )
@@ -49,7 +50,7 @@ func (r *DBStorageRepository) Find(key string) (string, error) {
 	var URL sql.NullString
 	err := row.Scan(&URL)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return "", fmt.Errorf("%w", ErrNotFound)
 		}
 		return "", fmt.Errorf("%w", ErrNotFound)
@@ -69,7 +70,7 @@ func (r *DBStorageRepository) FindByOriginalURL(URL string) (string, error) {
 	var shortURL sql.NullString
 	err := row.Scan(&shortURL)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return "", fmt.Errorf("%w", ErrNotFound)
 		}
 		return "", fmt.Errorf("%w", ErrNotFound)
