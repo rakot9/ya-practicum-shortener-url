@@ -128,6 +128,13 @@ func (h *Handler) APIShortURLBatch(res http.ResponseWriter, req *http.Request) {
 
 	var BatchShortURLResponseItems []model.BatchResponseItem
 
+	tx, err := h.dbStruct.Pool.Begin(h.dbStruct.Ctx)
+
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	for _, item := range batchRequestItems {
 
 		// Генерируем ключ
@@ -176,4 +183,6 @@ func (h *Handler) APIShortURLBatch(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusCreated)
 
 	res.Write(resp)
+
+	tx.Commit(h.dbStruct.Ctx)
 }

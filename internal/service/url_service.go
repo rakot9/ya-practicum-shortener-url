@@ -34,7 +34,6 @@ func NewURLService(repo URLRepository) *URLService {
 
 // ShortenURL генерирует уникальный ключ и сохраняет его в репозиторий.
 func (s *URLService) ShortenURL(url string, correlationID string) (string, error) {
-	fmt.Print("ShortenURL")
 	for i := 10; i > 0; i-- {
 
 		shortURL, _ := s.repo.FindByOriginalURL(url)

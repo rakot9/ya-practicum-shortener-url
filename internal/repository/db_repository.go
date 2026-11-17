@@ -40,7 +40,7 @@ func (r *DBStorageRepository) Save(key string, URL string, correlationID string)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return err
+			return nil
 		}
 		return fmt.Errorf("не удалось создать запись в таблицы сокращения url: %w", err)
 	}
