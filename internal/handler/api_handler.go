@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/rakot9/ya-practicum-shortener-url/internal/model"
-	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
-	"go.uber.org/zap"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/rakot9/ya-practicum-shortener-url/internal/model"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
+	"go.uber.org/zap"
 )
 
 func (h *Handler) APIShortURL(res http.ResponseWriter, req *http.Request) {
@@ -132,14 +133,21 @@ func (h *Handler) APIShortURLBatch(res http.ResponseWriter, req *http.Request) {
 		// Генерируем ключ
 		key, err := h.urlService.ShortenURL(item.OriginalURL, item.CorrelationID)
 
+		isSetOriginalURLInStorage := false
 		if err != nil {
+			if errors.Is(err, service.ErrOriginalURLAlreadyExist) {
+				isSetOriginalURLInStorage = true
+			}
 			if errors.Is(err, service.ErrCountAttemptExceed) {
 				h.logger.Error("count attempt (10) exceed for generate key. URL", zap.Error(err))
 				http.Error(res, "server error", http.StatusInternalServerError)
 				return
 			}
-			http.Error(res, "internal server error", http.StatusInternalServerError)
-			return
+
+			if !isSetOriginalURLInStorage {
+				http.Error(res, "internal server error", http.StatusInternalServerError)
+				return
+			}
 		}
 
 		// Получаем краткий url

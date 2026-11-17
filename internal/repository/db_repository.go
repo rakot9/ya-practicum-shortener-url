@@ -32,14 +32,20 @@ func (r *DBStorageRepository) Save(key string, URL string, correlationID string)
 		CorrelationIDDBValue = &correlationID
 	}
 
-	query := `INSERT INTO shortener (uuid, correlation_id, short_url, original_url, created_at) VALUES ($1, $2, $3, $4, $5)`
+	query := `INSERT INTO shortener (uuid, correlation_id, short_url, original_url, created_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`
 
-	_, err := r.pool.Exec(r.ctx, query, idV4, CorrelationIDDBValue, key, URL, time.Now().Format("2006-01-02 15:04:05"))
+	var id int64
+
+	err := r.pool.QueryRow(r.ctx, query, idV4, CorrelationIDDBValue, key, URL, time.Now().Format("2006-01-02 15:04:05")).Scan(&id)
+
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return err
+		}
 		return fmt.Errorf("не удалось создать запись в таблицы сокращения url: %w", err)
 	}
 
-	return err
+	return nil
 }
 
 func (r *DBStorageRepository) Find(key string) (string, error) {

@@ -42,6 +42,12 @@ func (r *InMemoryRepository) Find(key string) (string, error) {
 }
 
 func (r *InMemoryRepository) FindByOriginalURL(URL string) (string, error) {
+	for keyStore, valueStore := range r.store {
+		if valueStore == URL {
+			return keyStore, nil
+		}
+	}
+
 	return "", nil
 }
 

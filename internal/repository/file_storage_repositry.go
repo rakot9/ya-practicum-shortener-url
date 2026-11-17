@@ -95,7 +95,38 @@ func (r *FileStorgeRepository) Find(key string) (string, error) {
 }
 
 func (r *FileStorgeRepository) FindByOriginalURL(URL string) (string, error) {
-	return "", nil
+	if _, err := r.file.Seek(0, io.SeekStart); err != nil {
+		return "", err
+	}
+
+	scanner := bufio.NewScanner(r.file)
+
+	lineNum := 0
+
+	for scanner.Scan() {
+		lineNum++
+
+		lineBytes := scanner.Bytes()
+
+		var fileStorage FileStorage
+
+		err := json.Unmarshal(lineBytes, &fileStorage)
+
+		if err != nil {
+			continue
+		}
+
+		if fileStorage.OriginalURL == URL {
+			return fileStorage.ShortURL, nil
+		}
+
+	}
+
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+
+	return "", fmt.Errorf("key not found in storage file %w", ErrNotFound)
 }
 
 func (r *FileStorgeRepository) Close() error {
