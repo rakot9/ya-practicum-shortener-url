@@ -130,6 +130,8 @@ func (h *Handler) APIShortURLBatch(res http.ResponseWriter, req *http.Request) {
 
 	tx, err := h.dbStruct.Pool.Begin(h.dbStruct.Ctx)
 
+	defer tx.Rollback(h.dbStruct.Ctx)
+
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 		return
