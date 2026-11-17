@@ -50,6 +50,7 @@ go run . -f "test.txt"
 go run . -d "postgres://velobos:test@127.0.0.1:5432/velobos?sslmode=disable"
 
 Запуск тестов:
+2 shortenertest -test.v -test.run=^TestIteration2$ -binary-path=cmd/shortener/shortener -source-path=.
 8  shortenertest -test.v -test.run=^TestIteration8$ -binary-path=cmd/shortener/shortener -source-path=. -server-port=8080 -file-storage-path=storage.txt
 9  shortenertest -test.v -test.run=^TestIteration9$ -binary-path=cmd/shortener/shortener -source-path=. -server-port=8080 -file-storage-path=storage.txt
 10 shortenertest -test.v -test.run=^TestIteration10$ -binary-path=cmd/shortener/shortener -source-path=. -server-port=8080 -file-storage-path=storage.txt -database-dsn "postgres://velobos:test@127.0.0.1:5432/velobos?sslmode=disable"
