@@ -30,6 +30,10 @@ func (m *MockURLRepository) Close() error {
 	return nil
 }
 
+func (m *MockURLRepository) GetLastUserId() (int, error) {
+	return 1, nil
+}
+
 func TestURLService_ShortenURL_Success(t *testing.T) {
 
 	mockRepo := new(MockURLRepository)

@@ -135,3 +135,7 @@ func (r *FileStorgeRepository) Close() error {
 	}
 	return nil
 }
+
+func (r *FileStorgeRepository) GetLastUserId() (int, error) {
+	return 1, nil
+}

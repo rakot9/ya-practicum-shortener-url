@@ -1,0 +1,5 @@
+DROP INDEX IF EXISTS idx_url_user_id;
+
+ALTER TABLE shortener DROP COLUMN IF EXISTS user_id;
+
+DROP TABLE IF EXISTS users; 

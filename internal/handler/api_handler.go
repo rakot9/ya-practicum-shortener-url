@@ -1,6 +1,14 @@
 package handler
 
 import (
+	"crypto/hmac"
+	// "crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	// "encoding/hex"
+	"fmt"
+	"strconv"
+
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -12,6 +20,53 @@ import (
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"go.uber.org/zap"
 )
+
+// Секретный ключ для подписи (в реальном проекте берите из переменных окружения)
+var secretKey = []byte("super-secret-key-at-least-32-bytes-long!")
+
+const cookieName = "user_session_id"
+
+// verifyAndExtract проверяет подпись и возвращает исходное значение
+func verifyAndExtract(signedValue string, secret []byte) (string, error) {
+	parts := strings.Split(signedValue, ".")
+	if len(parts) != 2 {
+		return "", errors.New("неверный формат куки")
+	}
+
+	valueBytes, err := base64.URLEncoding.DecodeString(parts[0])
+	if err != nil {
+		return "", errors.New("ошибка декодирования значения")
+	}
+
+	sigBytes, err := base64.URLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return "", errors.New("ошибка декодирования подписи")
+	}
+
+	// Вычисляем ожидаемую подпись
+	mac := hmac.New(sha256.New, secret)
+	mac.Write(valueBytes)
+	expectedSig := mac.Sum(nil)
+
+	// Используем hmac.Equal для защиты от атак по времени (timing attacks)
+	if !hmac.Equal(sigBytes, expectedSig) {
+		return "", errors.New("подпись недействительна")
+	}
+
+	return string(valueBytes), nil
+}
+
+// signValue формирует строку формата "base64(value).base64(signature)"
+func signValue(value string, secret []byte) string {
+	mac := hmac.New(sha256.New, secret)
+	mac.Write([]byte(value))
+	signature := mac.Sum(nil)
+
+	encodedValue := base64.URLEncoding.EncodeToString([]byte(value))
+	encodedSig := base64.URLEncoding.EncodeToString(signature)
+
+	return encodedValue + "." + encodedSig
+}
 
 func (h *Handler) APIShortURL(res http.ResponseWriter, req *http.Request) {
 	if !strings.Contains(req.Header.Get("Content-Type"), "application/json") {
@@ -37,6 +92,20 @@ func (h *Handler) APIShortURL(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	// Cookie
+	cookie, err := req.Cookie(cookieName)
+	if err == nil {
+		// Кука найдена, проверяем подпись
+		userID, err := verifyAndExtract(cookie.Value, secretKey)
+		if err == nil {
+			fmt.Fprintf(res, "С возвращением! Ваш проверенный ID: %s\n", userID)
+			return
+		}
+		// Если подпись невалидна, логируем инцидент и перевыпускаем куку
+		fmt.Printf("Попытка подделки куки: %v\n", err)
+	}
+
 	// десериализуем JSON
 	if err = json.Unmarshal(buf.Bytes(), &shortURL); err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
@@ -85,6 +154,24 @@ func (h *Handler) APIShortURL(res http.ResponseWriter, req *http.Request) {
 	} else {
 		res.WriteHeader(http.StatusCreated)
 	}
+
+	user, err := h.urlService.GetUser()
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	signedCookieValue := signValue(strconv.Itoa(user), secretKey)
+
+	http.SetCookie(res, &http.Cookie{
+		Name:     cookieName,
+		Value:    signedCookieValue,
+		Path:     "/",
+		MaxAge:   86400 * 30, // 30 дней
+		HttpOnly: true,       // Защита от доступа через JS (XSS)
+		Secure:   true,       // Передача только по HTTPS (для localhost можно временно отключить)
+		SameSite: http.SameSiteLaxMode,
+	})
 
 	res.Write(resp)
 }
@@ -187,4 +274,7 @@ func (h *Handler) APIShortURLBatch(res http.ResponseWriter, req *http.Request) {
 	res.Write(resp)
 
 	tx.Commit(h.dbStruct.Ctx)
+}
+
+func (h *Handler) APIUserURLs(res http.ResponseWriter, req *http.Request) {
 }

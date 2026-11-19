@@ -50,6 +50,7 @@ go test -cover ./...
 migrate create -ext sql -dir ./migrations -seq create_shortener_table
 migrate -database "postgres://velobos:test@127.0.0.1:5432/velobos?sslmode=disable"  -path ./migrations up
 migrate -database "postgres://velobos:test@127.0.0.1:5432/velobos?sslmode=disable"  -path ./migrations down
+migrate -database "postgres://velobos:test@127.0.0.1:5432/velobos?sslmode=disable"  -path ./migrations force 1
 
 Запуск приложения с файловым хранилищем:
 go run . -f "test.txt"

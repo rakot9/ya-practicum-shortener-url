@@ -18,6 +18,7 @@ type URLRepository interface {
 	Find(key string) (string, error)
 	FindByOriginalURL(URL string) (string, error)
 	Close() error
+	GetLastUserId() (int, error)
 }
 
 // URLService управляет бизнес-логикой генерации ключей и координирует работу с репозиторием.
@@ -68,6 +69,10 @@ func (s *URLService) ShortenURL(url string, correlationID string) (string, error
 // GetURL возвращает оригинальный URL по его короткому ключу.
 func (s *URLService) GetURL(key string) (string, error) {
 	return s.repo.Find(key)
+}
+
+func (s *URLService) GetUser() (int, error) {
+	return s.repo.GetLastUserId()
 }
 
 // Вспомогательный метод генерации ключа остался внутри сервиса, так как это бизнес-логика.

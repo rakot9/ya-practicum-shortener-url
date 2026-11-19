@@ -92,3 +92,7 @@ func (r *DBStorageRepository) Close() error {
 	defer r.pool.Close()
 	return nil
 }
+
+func (r *DBStorageRepository) GetLastUserId() (int, error) {
+	return 1, nil
+}

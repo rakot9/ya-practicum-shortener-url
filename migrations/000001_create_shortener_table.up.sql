@@ -1,4 +1,4 @@
-CREATE TABLE shortener (
+CREATE TABLE IF NOT EXISTS shortener (
     id SERIAL PRIMARY KEY,
     uuid VARCHAR(36) NOT NULL,
     correlation_id VARCHAR(36) NULL,

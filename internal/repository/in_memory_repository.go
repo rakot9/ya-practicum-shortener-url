@@ -54,3 +54,7 @@ func (r *InMemoryRepository) FindByOriginalURL(URL string) (string, error) {
 func (r *InMemoryRepository) Close() error {
 	return nil
 }
+
+func (r *InMemoryRepository) GetLastUserId() (int, error) {
+	return 1, nil
+}
