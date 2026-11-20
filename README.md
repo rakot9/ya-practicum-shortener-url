@@ -43,10 +43,22 @@ git fetch template && git checkout template/v2 .github
 - **Hexagonal Architecture**
 - **Layered Architecture**
 
-Запуск приложения:
+Покрытие тестами проекта:
+go test -cover ./...
+
+Накатывание/откат миграций
+migrate create -ext sql -dir ./migrations -seq create_shortener_table
+migrate -database "postgres://velobos:test@127.0.0.1:5432/velobos?sslmode=disable"  -path ./migrations up
+migrate -database "postgres://velobos:test@127.0.0.1:5432/velobos?sslmode=disable"  -path ./migrations down
+
+Запуск приложения с файловым хранилищем:
+go run . -f "test.txt"
+
+Запуск приложения с БД:
 go run . -d "postgres://velobos:test@127.0.0.1:5432/velobos?sslmode=disable"
 
 Запуск тестов:
+2 shortenertest -test.v -test.run=^TestIteration2$ -binary-path=cmd/shortener/shortener -source-path=.
 8  shortenertest -test.v -test.run=^TestIteration8$ -binary-path=cmd/shortener/shortener -source-path=. -server-port=8080 -file-storage-path=storage.txt
 9  shortenertest -test.v -test.run=^TestIteration9$ -binary-path=cmd/shortener/shortener -source-path=. -server-port=8080 -file-storage-path=storage.txt
 10 shortenertest -test.v -test.run=^TestIteration10$ -binary-path=cmd/shortener/shortener -source-path=. -server-port=8080 -file-storage-path=storage.txt -database-dsn "postgres://velobos:test@127.0.0.1:5432/velobos?sslmode=disable"

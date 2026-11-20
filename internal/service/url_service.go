@@ -1,10 +1,12 @@
 package service
 
 import (
+	"context"
 	"crypto/rand"
 	"errors"
 	"fmt"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/service/txctx"
 	"math/big"
 )
 
@@ -14,29 +16,31 @@ var ErrCountAttemptExceed = errors.New("count attempt exceed")
 var ErrOriginalURLAlreadyExist = errors.New("original URL already processed")
 
 type URLRepository interface {
-	Save(key string, url string, correlationID string) error
-	Find(key string) (string, error)
-	FindByOriginalURL(URL string) (string, error)
+	Save(ctx context.Context, key string, url string, correlationID string) error
+	Find(ctx context.Context, key string) (string, error)
+	FindByOriginalURL(ctx context.Context, URL string) (string, error)
 	Close() error
 }
 
 // URLService управляет бизнес-логикой генерации ключей и координирует работу с репозиторием.
 type URLService struct {
 	repo URLRepository
+	Txm  *txctx.TxManager
 }
 
 // NewURLService принимает любой репозиторий, удовлетворяющий интерфейсу URLRepository.
-func NewURLService(repo URLRepository) *URLService {
+func NewURLService(repo URLRepository, txm *txctx.TxManager) *URLService {
 	return &URLService{
 		repo: repo,
+		Txm:  txm,
 	}
 }
 
 // ShortenURL генерирует уникальный ключ и сохраняет его в репозиторий.
-func (s *URLService) ShortenURL(url string, correlationID string) (string, error) {
+func (s *URLService) ShortenURL(ctx context.Context, url string, correlationID string) (string, error) {
 	for i := 10; i > 0; i-- {
 
-		shortURL, _ := s.repo.FindByOriginalURL(url)
+		shortURL, _ := s.repo.FindByOriginalURL(ctx, url)
 
 		if shortURL != "" {
 			return shortURL, fmt.Errorf("%w", ErrOriginalURLAlreadyExist)
@@ -48,10 +52,10 @@ func (s *URLService) ShortenURL(url string, correlationID string) (string, error
 		}
 
 		// Проверяем, существует ли уже ключ в репозитории
-		_, err = s.repo.Find(key)
+		_, err = s.repo.Find(ctx, key)
 		if errors.Is(err, repository.ErrNotFound) {
 			// Ключ свободен, сохраняем и выходим из цикла
-			if err := s.repo.Save(key, url, correlationID); err != nil {
+			if err := s.repo.Save(ctx, key, url, correlationID); err != nil {
 				return "", fmt.Errorf("failed to save url: %w", err)
 			}
 			return key, nil
@@ -66,8 +70,8 @@ func (s *URLService) ShortenURL(url string, correlationID string) (string, error
 }
 
 // GetURL возвращает оригинальный URL по его короткому ключу.
-func (s *URLService) GetURL(key string) (string, error) {
-	return s.repo.Find(key)
+func (s *URLService) GetURL(ctx context.Context, key string) (string, error) {
+	return s.repo.Find(ctx, key)
 }
 
 // Вспомогательный метод генерации ключа остался внутри сервиса, так как это бизнес-логика.
