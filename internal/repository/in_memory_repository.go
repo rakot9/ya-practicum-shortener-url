@@ -43,6 +43,9 @@ func (r *InMemoryRepository) Find(ctx context.Context, key string) (string, erro
 }
 
 func (r *InMemoryRepository) FindByOriginalURL(ctx context.Context, URL string) (string, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	for keyStore, valueStore := range r.store {
 		if valueStore == URL {
 			return keyStore, nil

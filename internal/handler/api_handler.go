@@ -5,12 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/rakot9/ya-practicum-shortener-url/internal/model"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/service/txctx"
 	"go.uber.org/zap"
 )
 
@@ -121,7 +123,6 @@ func (h *Handler) APIShortURLBatch(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//
 	if len(batchRequestItems) == 0 {
 		http.Error(res, "Список URL пуст", http.StatusBadRequest)
 		return
@@ -129,47 +130,59 @@ func (h *Handler) APIShortURLBatch(res http.ResponseWriter, req *http.Request) {
 
 	var BatchShortURLResponseItems []model.BatchResponseItem
 
-	for _, item := range batchRequestItems {
+	var statusCode = 0
 
-		var key string
+	isSetOriginalURLInStorage := false
 
-		h.urlService.Txm.RunInTx(req.Context(), func(ctx context.Context) error {
+	err = h.urlService.Txm.RunInTx(req.Context(), h.logger, func(ctx context.Context) error {
+		for _, item := range batchRequestItems {
+			var key string
+
 			key, err = h.urlService.ShortenURL(ctx, item.OriginalURL, item.CorrelationID)
 
-			return err
-		})
+			if err != nil {
+				if errors.Is(err, service.ErrOriginalURLAlreadyExist) {
+					isSetOriginalURLInStorage = true
+				}
+				if errors.Is(err, service.ErrCountAttemptExceed) {
+					h.logger.Error("count attempt (10) exceed for generate key. URL", zap.Error(err))
+					statusCode = http.StatusInternalServerError
+					return fmt.Errorf("server error")
+				}
 
-		isSetOriginalURLInStorage := false
-		if err != nil {
-			if errors.Is(err, service.ErrOriginalURLAlreadyExist) {
-				isSetOriginalURLInStorage = true
+				if !isSetOriginalURLInStorage {
+					statusCode = http.StatusInternalServerError
+					return fmt.Errorf("internal server error")
+				}
 			}
-			if errors.Is(err, service.ErrCountAttemptExceed) {
-				h.logger.Error("count attempt (10) exceed for generate key. URL", zap.Error(err))
-				http.Error(res, "server error", http.StatusInternalServerError)
-				return
+
+			// Получаем краткий url
+			url, err := url.JoinPath(h.flagEnv.FlagRunShorternerAddr, key)
+
+			if err != nil {
+				statusCode = http.StatusBadRequest
+				return err
 			}
 
-			if !isSetOriginalURLInStorage {
-				http.Error(res, "internal server error", http.StatusInternalServerError)
-				return
+			var responseItems = model.BatchResponseItem{
+				CorrelationID: item.CorrelationID,
+				ShortURL:      url,
 			}
+
+			BatchShortURLResponseItems = append(BatchShortURLResponseItems, responseItems)
 		}
-
-		// Получаем краткий url
-		url, err := url.JoinPath(h.flagEnv.FlagRunShorternerAddr, key)
-
-		if err != nil {
-			http.Error(res, err.Error(), http.StatusBadRequest)
-			return
+		if errors.Is(err, service.ErrOriginalURLAlreadyExist) {
+			return nil
 		}
+		return err
+	})
 
-		var responseItems = model.BatchResponseItem{
-			CorrelationID: item.CorrelationID,
-			ShortURL:      url,
+	if err != nil {
+		if errors.Is(err, txctx.ErrTransaction) {
+			http.Error(res, "internal server error", http.StatusInternalServerError)
+		} else {
+			http.Error(res, err.Error(), statusCode)
 		}
-
-		BatchShortURLResponseItems = append(BatchShortURLResponseItems, responseItems)
 	}
 
 	resp, err := json.Marshal(BatchShortURLResponseItems)
@@ -179,7 +192,12 @@ func (h *Handler) APIShortURLBatch(res http.ResponseWriter, req *http.Request) {
 	}
 
 	res.Header().Set("Content-Type", "application/json")
-	res.WriteHeader(http.StatusCreated)
+
+	if isSetOriginalURLInStorage {
+		res.WriteHeader(http.StatusConflict)
+	} else {
+		res.WriteHeader(http.StatusCreated)
+	}
 
 	res.Write(resp)
 }

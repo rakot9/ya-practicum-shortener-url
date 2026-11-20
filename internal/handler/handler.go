@@ -130,7 +130,7 @@ func (h *Handler) PingDB(res http.ResponseWriter, req *http.Request) {
 		status = http.StatusOK
 	} else {
 		if h.txm.GetPool() == nil {
-			status = http.StatusOK
+			status = http.StatusInternalServerError
 		} else {
 			if err := h.txm.GetPool().Ping(req.Context()); err != nil {
 
