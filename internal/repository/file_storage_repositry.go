@@ -2,6 +2,7 @@ package repository
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
@@ -37,7 +38,7 @@ func NewFileStorgeRepository(configParams config.Flags) (*FileStorgeRepository, 
 	}, nil
 }
 
-func (r *FileStorgeRepository) Save(key string, URL string, correlationID string) error {
+func (r *FileStorgeRepository) Save(ctx context.Context, key string, URL string, correlationID string) error {
 	idV4 := uuid.New()
 
 	saveData := FileStorage{
@@ -59,7 +60,7 @@ func (r *FileStorgeRepository) Save(key string, URL string, correlationID string
 	return err
 }
 
-func (r *FileStorgeRepository) Find(key string) (string, error) {
+func (r *FileStorgeRepository) Find(ctx context.Context, key string) (string, error) {
 	if _, err := r.file.Seek(0, io.SeekStart); err != nil {
 		return "", err
 	}
@@ -94,7 +95,7 @@ func (r *FileStorgeRepository) Find(key string) (string, error) {
 	return "", fmt.Errorf("key not found in storage file %s: %w", key, ErrNotFound)
 }
 
-func (r *FileStorgeRepository) FindByOriginalURL(URL string) (string, error) {
+func (r *FileStorgeRepository) FindByOriginalURL(ctx context.Context, URL string) (string, error) {
 	if _, err := r.file.Seek(0, io.SeekStart); err != nil {
 		return "", err
 	}

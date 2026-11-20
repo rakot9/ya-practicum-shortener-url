@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -43,7 +44,7 @@ func (h *Handler) APIShortURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	key, err := h.urlService.ShortenURL(shortURL.URL, "")
+	key, err := h.urlService.ShortenURL(req.Context(), shortURL.URL, "")
 
 	isSetOriginalURLInStorage := false
 	if err != nil {
@@ -128,19 +129,15 @@ func (h *Handler) APIShortURLBatch(res http.ResponseWriter, req *http.Request) {
 
 	var BatchShortURLResponseItems []model.BatchResponseItem
 
-	tx, err := h.dbStruct.Pool.Begin(h.dbStruct.Ctx)
-
-	defer tx.Rollback(h.dbStruct.Ctx)
-
-	if err != nil {
-		http.Error(res, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	for _, item := range batchRequestItems {
 
-		// Генерируем ключ
-		key, err := h.urlService.ShortenURL(item.OriginalURL, item.CorrelationID)
+		var key string
+
+		h.urlService.Txm.RunInTx(req.Context(), func(ctx context.Context) error {
+			key, err = h.urlService.ShortenURL(ctx, item.OriginalURL, item.CorrelationID)
+
+			return err
+		})
 
 		isSetOriginalURLInStorage := false
 		if err != nil {
@@ -185,6 +182,4 @@ func (h *Handler) APIShortURLBatch(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusCreated)
 
 	res.Write(resp)
-
-	tx.Commit(h.dbStruct.Ctx)
 }

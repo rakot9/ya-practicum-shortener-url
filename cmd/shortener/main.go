@@ -1,6 +1,10 @@
 package main
 
 import (
+	"context"
+	"net/http"
+	"os"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/config/db"
@@ -8,16 +12,15 @@ import (
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/router"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/service/txctx"
 	"github.com/rakot9/ya-practicum-shortener-url/migrations"
 	"go.uber.org/zap"
-	"net/http"
-	"os"
 )
 
 type application struct {
 	logger       *zap.Logger
 	configParams config.Flags
-	dbStruct     *db.DBStruct
+	txm          *txctx.TxManager
 }
 
 func main() {
@@ -29,16 +32,17 @@ func main() {
 	defer zapLogger.Sync()
 
 	// configure DB connecton
-	dbStruct := db.Parse(flags.FlagDBDSN, zapLogger)
+	ctx := context.Background()
+	txm := db.Parse(ctx, flags.FlagDBDSN, zapLogger)
 
 	app := &application{
 		logger:       zapLogger,
 		configParams: flags,
-		dbStruct:     dbStruct,
+		txm:          txm,
 	}
 
 	// init storage repository
-	storageRepo := app.initRepository()
+	storageRepo := app.initRepository(ctx)
 
 	// configure handler
 	handler := app.configureHandler(storageRepo)
@@ -60,7 +64,7 @@ func main() {
 }
 
 func (app *application) configureHandler(storageRepo service.URLRepository) *handler.Handler {
-	service := service.NewURLService(storageRepo)
+	service := service.NewURLService(storageRepo, app.txm)
 
 	cfg := &handler.FlagEnv{
 		FlagRunAddr:           app.configParams.FlagRunAddr,
@@ -68,17 +72,17 @@ func (app *application) configureHandler(storageRepo service.URLRepository) *han
 		FlagDBDSN:             app.configParams.FlagDBDSN,
 	}
 
-	return handler.NewHandler(service, cfg, app.dbStruct, app.logger)
+	return handler.NewHandler(service, cfg, app.txm, app.logger)
 }
 
-func (app *application) initRepository() service.URLRepository {
+func (app *application) initRepository(ctx context.Context) service.URLRepository {
 	var repo service.URLRepository
 	var err error
 
 	// DB storage
 	if app.configParams.FlagDBDSN != "" {
 		// DB repo
-		repo, err = repository.NewDBStorgeRepository(app.dbStruct.Ctx, app.dbStruct.Pool)
+		repo, err = repository.NewDBStorgeRepository(app.txm.GetPool())
 
 		if err != nil {
 			app.logger.Error("Ошибка при инициализации репозитория DB: ", zap.Error(err))

@@ -3,9 +3,9 @@ package handler
 import (
 	"errors"
 	"github.com/go-chi/chi/v5"
-	"github.com/rakot9/ya-practicum-shortener-url/internal/config/db"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/service/txctx"
 	"go.uber.org/zap"
 	"io"
 	"net/http"
@@ -22,15 +22,15 @@ type FlagEnv struct {
 type Handler struct {
 	urlService *service.URLService
 	flagEnv    *FlagEnv
-	dbStruct   *db.DBStruct
+	txm        *txctx.TxManager
 	logger     *zap.Logger
 }
 
-func NewHandler(urlService *service.URLService, flagEnv *FlagEnv, dbStruct *db.DBStruct, logger *zap.Logger) *Handler {
+func NewHandler(urlService *service.URLService, flagEnv *FlagEnv, txm *txctx.TxManager, logger *zap.Logger) *Handler {
 	return &Handler{
 		urlService: urlService,
 		flagEnv:    flagEnv,
-		dbStruct:   dbStruct,
+		txm:        txm,
 		logger:     logger,
 	}
 }
@@ -61,7 +61,7 @@ func (h *Handler) MainPage(res http.ResponseWriter, req *http.Request) {
 
 	URLtoShorten := bodyText
 
-	key, err := h.urlService.ShortenURL(URLtoShorten, "")
+	key, err := h.urlService.ShortenURL(req.Context(), URLtoShorten, "")
 
 	isSetOriginalURLInStorage := false
 
@@ -103,7 +103,7 @@ func (h *Handler) MainPage(res http.ResponseWriter, req *http.Request) {
 func (h *Handler) PageByID(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 
-	url, err := h.urlService.GetURL(id)
+	url, err := h.urlService.GetURL(req.Context(), id)
 
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
@@ -129,10 +129,10 @@ func (h *Handler) PingDB(res http.ResponseWriter, req *http.Request) {
 	if h.flagEnv.FlagDBDSN == "" {
 		status = http.StatusOK
 	} else {
-		if h.dbStruct.Pool == nil {
+		if h.txm.GetPool() == nil {
 			status = http.StatusOK
 		} else {
-			if err := h.dbStruct.Pool.Ping(h.dbStruct.Ctx); err != nil {
+			if err := h.txm.GetPool().Ping(req.Context()); err != nil {
 
 				h.logger.Error("db not accessable", zap.Error(err))
 
