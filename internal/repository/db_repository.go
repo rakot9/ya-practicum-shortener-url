@@ -49,7 +49,6 @@ func (r *DBStorageRepository) Save(ctx context.Context, key string, URL string, 
 
 	var id int64
 
-	//err := r.pool.QueryRow(r.ctx, query, idV4, CorrelationIDDBValue, key, URL, time.Now().Format("2006-01-02 15:04:05")).Scan(&id)
 	err := r.querier(ctx).QueryRow(ctx, query, idV4, CorrelationIDDBValue, key, URL, time.Now().Format("2006-01-02 15:04:05")).Scan(&id)
 
 	if err != nil {

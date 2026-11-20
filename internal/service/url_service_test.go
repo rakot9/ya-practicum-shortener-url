@@ -37,10 +37,7 @@ func (m *MockURLRepository) Close() error {
 func TestURLService_ShortenURL_Success(t *testing.T) {
 
 	flags := config.Flags{
-		FlagRunAddr:           "localhost:8080",
-		FlagRunShorternerAddr: "http://localhost:8080",
-		FlagFileStoragePath:   "shortener.txt",
-		FlagInMemoryStorage:   true,
+		FlagDBDSN: "postgres://test:test@127.0.0.1:5432/test?sslmode=disable",
 	}
 
 	zapLogger, _ := zap.NewProduction()
@@ -71,10 +68,7 @@ func TestURLService_ShortenURL_Success(t *testing.T) {
 
 func TestURLService_ShortenURL_CollisionResolved(t *testing.T) {
 	flags := config.Flags{
-		FlagRunAddr:           "localhost:8080",
-		FlagRunShorternerAddr: "http://localhost:8080",
-		FlagFileStoragePath:   "shortener.txt",
-		FlagInMemoryStorage:   true,
+		FlagDBDSN: "postgres://test:test@127.0.0.1:5432/test?sslmode=disable",
 	}
 
 	zapLogger, _ := zap.NewProduction()
@@ -104,10 +98,7 @@ func TestURLService_ShortenURL_CollisionResolved(t *testing.T) {
 
 func TestURLService_ShortenURL_AttemptsExceeded(t *testing.T) {
 	flags := config.Flags{
-		FlagRunAddr:           "localhost:8080",
-		FlagRunShorternerAddr: "http://localhost:8080",
-		FlagFileStoragePath:   "shortener.txt",
-		FlagInMemoryStorage:   true,
+		FlagDBDSN: "postgres://test:test@127.0.0.1:5432/test?sslmode=disable",
 	}
 
 	zapLogger, _ := zap.NewProduction()
@@ -133,10 +124,7 @@ func TestURLService_ShortenURL_AttemptsExceeded(t *testing.T) {
 
 func TestURLService_ShortenURL_RepoFindError(t *testing.T) {
 	flags := config.Flags{
-		FlagRunAddr:           "localhost:8080",
-		FlagRunShorternerAddr: "http://localhost:8080",
-		FlagFileStoragePath:   "shortener.txt",
-		FlagInMemoryStorage:   true,
+		FlagDBDSN: "postgres://test:test@127.0.0.1:5432/test?sslmode=disable",
 	}
 
 	zapLogger, _ := zap.NewProduction()
@@ -163,10 +151,7 @@ func TestURLService_ShortenURL_RepoFindError(t *testing.T) {
 
 func TestURLService_ShortenURL_RepoSaveError(t *testing.T) {
 	flags := config.Flags{
-		FlagRunAddr:           "localhost:8080",
-		FlagRunShorternerAddr: "http://localhost:8080",
-		FlagFileStoragePath:   "shortener.txt",
-		FlagInMemoryStorage:   true,
+		FlagDBDSN: "postgres://test:test@127.0.0.1:5432/test?sslmode=disable",
 	}
 
 	zapLogger, _ := zap.NewProduction()
@@ -194,10 +179,7 @@ func TestURLService_ShortenURL_RepoSaveError(t *testing.T) {
 
 func TestURLService_GetURL_Success(t *testing.T) {
 	flags := config.Flags{
-		FlagRunAddr:           "localhost:8080",
-		FlagRunShorternerAddr: "http://localhost:8080",
-		FlagFileStoragePath:   "shortener.txt",
-		FlagInMemoryStorage:   true,
+		FlagDBDSN: "postgres://test:test@127.0.0.1:5432/test?sslmode=disable",
 	}
 
 	zapLogger, _ := zap.NewProduction()
@@ -222,10 +204,7 @@ func TestURLService_GetURL_Success(t *testing.T) {
 
 func TestURLService_GetURL_NotFound(t *testing.T) {
 	flags := config.Flags{
-		FlagRunAddr:           "localhost:8080",
-		FlagRunShorternerAddr: "http://localhost:8080",
-		FlagFileStoragePath:   "shortener.txt",
-		FlagInMemoryStorage:   true,
+		FlagDBDSN: "postgres://test:test@127.0.0.1:5432/test?sslmode=disable",
 	}
 
 	zapLogger, _ := zap.NewProduction()
