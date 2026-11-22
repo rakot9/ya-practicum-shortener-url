@@ -33,7 +33,7 @@ func (m *TxManager) RunInTx(ctx context.Context, logger *zap.Logger, fn func(con
 
 	if err != nil {
 		logger.Error("error begin transaction", zap.Error(err))
-		return fmt.Errorf("begin tx: %w", ErrTransaction)
+		return fmt.Errorf("begin tx: %w; %w", err, ErrTransaction)
 	}
 
 	logger.Info("T.[transaction.begin]")
@@ -42,12 +42,12 @@ func (m *TxManager) RunInTx(ctx context.Context, logger *zap.Logger, fn func(con
 
 	if err := fn(WithTx(ctx, tx)); err != nil {
 		logger.Error("error function in transaction", zap.Error(err))
-		return fmt.Errorf("error function in tx -> rollback: %w", ErrTransaction)
+		return fmt.Errorf("error function in tx -> rollback: %w, %w", err, ErrTransaction)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
 		logger.Error("error commit transaction", zap.Error(err))
-		return fmt.Errorf("error commit in tx: %w", ErrTransaction)
+		return fmt.Errorf("error commit in tx: %w, %w", err, ErrTransaction)
 	}
 
 	logger.Info("T.[transaction.commit]")
