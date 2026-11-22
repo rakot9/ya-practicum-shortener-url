@@ -57,7 +57,7 @@ func (r *FileStorgeRepository) Save(ctx context.Context, key string, URL string,
 
 	_, err = r.file.Write(data)
 
-	return "", err
+	return key, err
 }
 
 func (r *FileStorgeRepository) Find(ctx context.Context, key string) (string, error) {
