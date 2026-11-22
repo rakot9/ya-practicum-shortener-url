@@ -180,8 +180,10 @@ func (h *Handler) APIShortURLBatch(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		if errors.Is(err, txctx.ErrTransaction) {
 			http.Error(res, "internal server error", http.StatusInternalServerError)
+			return
 		} else {
 			http.Error(res, err.Error(), statusCode)
+			return
 		}
 	}
 

@@ -40,7 +40,13 @@ func NewURLService(repo URLRepository, txm *txctx.TxManager) *URLService {
 func (s *URLService) ShortenURL(ctx context.Context, url string, correlationID string) (string, error) {
 	for i := 10; i > 0; i-- {
 
-		shortURL, _ := s.repo.FindByOriginalURL(ctx, url)
+		shortURL, err := s.repo.FindByOriginalURL(ctx, url)
+
+		if err != nil {
+			if !errors.Is(err, repository.ErrNotFound) {
+				return "", fmt.Errorf("%w", err)
+			}
+		}
 
 		if shortURL != "" {
 			return shortURL, fmt.Errorf("%w", ErrOriginalURLAlreadyExist)

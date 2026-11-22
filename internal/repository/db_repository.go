@@ -45,11 +45,11 @@ func (r *DBStorageRepository) Save(ctx context.Context, key string, URL string, 
 		CorrelationIDDBValue = &correlationID
 	}
 
-	query := `INSERT INTO shortener (uuid, correlation_id, short_url, original_url, created_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`
+	query := `INSERT INTO shortener (uuid, correlation_id, short_url, original_url, created_at) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (original_url) DO UPDATE SET original_url = EXCLUDED.original_url RETURNING short_url`
 
-	var id int64
+	var shortURL string
 
-	err := r.querier(ctx).QueryRow(ctx, query, idV4, CorrelationIDDBValue, key, URL, time.Now().Format("2006-01-02 15:04:05")).Scan(&id)
+	err := r.querier(ctx).QueryRow(ctx, query, idV4, CorrelationIDDBValue, key, URL, time.Now().Format("2006-01-02 15:04:05")).Scan(&shortURL)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

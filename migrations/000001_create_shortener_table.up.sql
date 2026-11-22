@@ -11,4 +11,6 @@ CREATE INDEX idx_uuid ON shortener(uuid);
 
 CREATE INDEX idx_short_url ON shortener(short_url);
 
-CREATE UNIQUE INDEX idx_original_url ON shortener(original_url);
+CREATE UNIQUE INDEX idx_uq_original_url ON shortener(original_url);
+
+CREATE UNIQUE INDEX idx_uq_short_url ON shortener(short_url);
