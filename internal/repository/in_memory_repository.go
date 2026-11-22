@@ -24,11 +24,11 @@ func NewInMemoryRepository(configParams config.Flags) *InMemoryRepository {
 	}
 }
 
-func (r *InMemoryRepository) Save(ctx context.Context, key string, url string, correlationID string) error {
+func (r *InMemoryRepository) Save(ctx context.Context, key string, url string, correlationID string) (string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.store[key] = url
-	return nil
+	return key, nil
 }
 
 func (r *InMemoryRepository) Find(ctx context.Context, key string) (string, error) {

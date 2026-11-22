@@ -16,7 +16,7 @@ var ErrCountAttemptExceed = errors.New("count attempt exceed")
 var ErrOriginalURLAlreadyExist = errors.New("original URL already processed")
 
 type URLRepository interface {
-	Save(ctx context.Context, key string, url string, correlationID string) error
+	Save(ctx context.Context, key string, url string, correlationID string) (string, error)
 	Find(ctx context.Context, key string) (string, error)
 	FindByOriginalURL(ctx context.Context, URL string) (string, error)
 	Close() error
@@ -61,7 +61,7 @@ func (s *URLService) ShortenURL(ctx context.Context, url string, correlationID s
 		_, err = s.repo.Find(ctx, key)
 		if errors.Is(err, repository.ErrNotFound) {
 			// Ключ свободен, сохраняем и выходим из цикла
-			if err := s.repo.Save(ctx, key, url, correlationID); err != nil {
+			if key, err = s.repo.Save(ctx, key, url, correlationID); err != nil {
 				return "", fmt.Errorf("failed to save url: %w", err)
 			}
 			return key, nil

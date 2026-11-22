@@ -7,11 +7,15 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service/txctx"
 	"time"
 )
+
+var ErrShortURLConflict = errors.New("short url already exists")
 
 type Querier interface {
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
@@ -36,7 +40,7 @@ func (r *DBStorageRepository) querier(ctx context.Context) Querier {
 	return r.pool
 }
 
-func (r *DBStorageRepository) Save(ctx context.Context, key string, URL string, correlationID string) error {
+func (r *DBStorageRepository) Save(ctx context.Context, key string, URL string, correlationID string) (string, error) {
 	idV4 := uuid.New()
 
 	var CorrelationIDDBValue *string
@@ -52,13 +56,23 @@ func (r *DBStorageRepository) Save(ctx context.Context, key string, URL string, 
 	err := r.querier(ctx).QueryRow(ctx, query, idV4, CorrelationIDDBValue, key, URL, time.Now().Format("2006-01-02 15:04:05")).Scan(&shortURL)
 
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			// Код 23505 — нарушение уникальности (pgerrcode.UniqueViolation)
+			if pgErr.Code == pgerrcode.UniqueViolation {
+				switch pgErr.ConstraintName {
+				case "shortener_short_url_key":
+					return shortURL, ErrShortURLConflict
+				default:
+					return "", fmt.Errorf("конфликт уникальности по полю %s: %w", pgErr.ConstraintName, err)
+				}
+			}
 		}
-		return fmt.Errorf("не удалось создать запись в таблицы сокращения url: %w", err)
+
+		return "", fmt.Errorf("не удалось создать запись в таблицы сокращения url: %w", err)
 	}
 
-	return nil
+	return shortURL, nil
 }
 
 func (r *DBStorageRepository) Find(ctx context.Context, key string) (string, error) {

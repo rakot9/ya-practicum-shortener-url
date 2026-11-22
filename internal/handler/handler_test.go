@@ -22,9 +22,9 @@ type mockRepo struct {
 	storage map[string]string
 }
 
-func (m *mockRepo) Save(key, value string) error {
+func (m *mockRepo) Save(key, value string) (string, error) {
 	m.storage[key] = value
-	return nil
+	return key, nil
 }
 
 func (m *mockRepo) Find(key string) (string, error) {
@@ -144,7 +144,7 @@ func TestHandler_PageByID(t *testing.T) {
 	// Предзаполняем репозиторий для теста существующего ID
 	targetURL := "https://yandex.ru"
 	existingID := "shortKey123"
-	_ = repo.Save(ctx, existingID, targetURL, "")
+	existingID, _ = repo.Save(ctx, existingID, targetURL, "")
 
 	tests := []struct {
 		name       string

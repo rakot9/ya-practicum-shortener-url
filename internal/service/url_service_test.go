@@ -21,9 +21,9 @@ func (m *MockURLRepository) Find(ctx context.Context, key string) (string, error
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockURLRepository) Save(ctx context.Context, key string, url string, correlationID string) error {
+func (m *MockURLRepository) Save(ctx context.Context, key string, url string, correlationID string) (string, error) {
 	args := m.Called(key, url)
-	return args.Error(0)
+	return key, args.Error(0)
 }
 
 func (m *MockURLRepository) FindByOriginalURL(ctx context.Context, URL string) (string, error) {

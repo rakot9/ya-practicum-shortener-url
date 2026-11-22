@@ -38,7 +38,7 @@ func NewFileStorgeRepository(configParams config.Flags) (*FileStorgeRepository, 
 	}, nil
 }
 
-func (r *FileStorgeRepository) Save(ctx context.Context, key string, URL string, correlationID string) error {
+func (r *FileStorgeRepository) Save(ctx context.Context, key string, URL string, correlationID string) (string, error) {
 	idV4 := uuid.New()
 
 	saveData := FileStorage{
@@ -50,14 +50,14 @@ func (r *FileStorgeRepository) Save(ctx context.Context, key string, URL string,
 
 	data, err := json.Marshal(saveData)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	data = append(data, '\n')
 
 	_, err = r.file.Write(data)
 
-	return err
+	return "", err
 }
 
 func (r *FileStorgeRepository) Find(ctx context.Context, key string) (string, error) {
