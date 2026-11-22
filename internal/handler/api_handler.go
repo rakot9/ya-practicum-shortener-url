@@ -2,10 +2,9 @@ package handler
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
+
 	"net/http"
 	"net/url"
 	"strings"
@@ -130,60 +129,33 @@ func (h *Handler) APIShortURLBatch(res http.ResponseWriter, req *http.Request) {
 
 	var BatchShortURLResponseItems []model.BatchResponseItem
 
-	var statusCode = 0
+	BatchShortURLResponseItems, err = h.urlService.ShortenBatch(req.Context(), batchRequestItems, h.logger, h.flagEnv.FlagRunShorternerAddr)
 
-	isSetOriginalURLInStorage := false
-
-	err = h.urlService.Txm.RunInTx(req.Context(), h.logger, func(ctx context.Context) error {
-		for _, item := range batchRequestItems {
-			var key string
-
-			key, err = h.urlService.ShortenURL(ctx, item.OriginalURL, item.CorrelationID)
-
-			if err != nil {
-				if errors.Is(err, service.ErrOriginalURLAlreadyExist) {
-					isSetOriginalURLInStorage = true
-				}
-				if errors.Is(err, service.ErrCountAttemptExceed) {
-					h.logger.Error("count attempt (10) exceed for generate key. URL", zap.Error(err))
-					statusCode = http.StatusInternalServerError
-					return fmt.Errorf("server error")
-				}
-
-				if !isSetOriginalURLInStorage {
-					statusCode = http.StatusInternalServerError
-					return fmt.Errorf("internal server error")
-				}
-			}
-
-			// Получаем краткий url
-			url, err := url.JoinPath(h.flagEnv.FlagRunShorternerAddr, key)
-
-			if err != nil {
-				statusCode = http.StatusBadRequest
-				return err
-			}
-
-			var responseItems = model.BatchResponseItem{
-				CorrelationID: item.CorrelationID,
-				ShortURL:      url,
-			}
-
-			BatchShortURLResponseItems = append(BatchShortURLResponseItems, responseItems)
-		}
-		if errors.Is(err, service.ErrOriginalURLAlreadyExist) {
-			return nil
-		}
-		return err
-	})
+	var isSetOriginalURLInStorage = false
 
 	if err != nil {
-		if errors.Is(err, txctx.ErrTransaction) {
-			http.Error(res, "internal server error", http.StatusInternalServerError)
-			return
+		var batchErr *service.BatchError
+
+		if errors.As(err, &batchErr) {
+			isSetOriginalURLInStorage = batchErr.IsOrigURLInStorage
+
+			if errors.Is(batchErr, service.ErrInternalServerError) || errors.Is(batchErr, service.ErrServerError) {
+				http.Error(res, batchErr.Err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			if errors.Is(batchErr, service.ErrBadRequest) {
+				http.Error(res, batchErr.Err.Error(), http.StatusBadRequest)
+				return
+			}
 		} else {
-			http.Error(res, err.Error(), statusCode)
-			return
+			if errors.Is(err, txctx.ErrTransaction) {
+				http.Error(res, "internal server error", http.StatusInternalServerError)
+				return
+			} else {
+				http.Error(res, err.Error(), http.StatusBadRequest)
+				return
+			}
 		}
 	}
 
