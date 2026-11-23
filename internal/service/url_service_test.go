@@ -1,10 +1,14 @@
 package service
 
 import (
+	"context"
 	"errors"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/config/db"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"go.uber.org/zap"
 	"testing"
 )
 
@@ -12,17 +16,17 @@ type MockURLRepository struct {
 	mock.Mock
 }
 
-func (m *MockURLRepository) Find(key string) (string, error) {
+func (m *MockURLRepository) Find(ctx context.Context, key string) (string, error) {
 	args := m.Called(key)
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockURLRepository) Save(key string, url string, correlationID string) error {
+func (m *MockURLRepository) Save(ctx context.Context, key string, url string, correlationID string) (string, error) {
 	args := m.Called(key, url)
-	return args.Error(0)
+	return key, args.Error(0)
 }
 
-func (m *MockURLRepository) FindByOriginalURL(URL string) (string, error) {
+func (m *MockURLRepository) FindByOriginalURL(ctx context.Context, URL string) (string, error) {
 	return "", nil
 }
 
@@ -36,8 +40,17 @@ func (m *MockURLRepository) GetLastUserId() (int, error) {
 
 func TestURLService_ShortenURL_Success(t *testing.T) {
 
+	flags := config.Flags{
+		FlagDBDSN: "postgres://test:test@127.0.0.1:5432/test?sslmode=disable",
+	}
+
+	zapLogger, _ := zap.NewProduction()
+	defer zapLogger.Sync()
+
+	ctx := context.Background()
+	txm := db.Parse(ctx, flags.FlagDBDSN, zapLogger)
 	mockRepo := new(MockURLRepository)
-	service := NewURLService(mockRepo)
+	service := NewURLService(mockRepo, txm)
 
 	targetURL := "https://yandex.ru"
 
@@ -47,7 +60,7 @@ func TestURLService_ShortenURL_Success(t *testing.T) {
 	mockRepo.On("Find", mock.AnythingOfType("string")).Return("", repository.ErrNotFound).Once()
 	mockRepo.On("Save", mock.AnythingOfType("string"), targetURL).Return(nil).Once()
 
-	key, err := service.ShortenURL(targetURL, "")
+	key, err := service.ShortenURL(ctx, targetURL, "")
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, key)
@@ -58,8 +71,17 @@ func TestURLService_ShortenURL_Success(t *testing.T) {
 }
 
 func TestURLService_ShortenURL_CollisionResolved(t *testing.T) {
+	flags := config.Flags{
+		FlagDBDSN: "postgres://test:test@127.0.0.1:5432/test?sslmode=disable",
+	}
+
+	zapLogger, _ := zap.NewProduction()
+	defer zapLogger.Sync()
+
+	ctx := context.Background()
+	txm := db.Parse(ctx, flags.FlagDBDSN, zapLogger)
 	mockRepo := new(MockURLRepository)
-	service := NewURLService(mockRepo)
+	service := NewURLService(mockRepo, txm)
 
 	targetURL := "https://yandex.ru"
 
@@ -71,7 +93,7 @@ func TestURLService_ShortenURL_CollisionResolved(t *testing.T) {
 	mockRepo.On("Find", mock.AnythingOfType("string")).Return("", repository.ErrNotFound).Once()
 	mockRepo.On("Save", mock.AnythingOfType("string"), targetURL).Return(nil).Once()
 
-	key, err := service.ShortenURL(targetURL, "")
+	key, err := service.ShortenURL(ctx, targetURL, "")
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, key)
@@ -79,15 +101,24 @@ func TestURLService_ShortenURL_CollisionResolved(t *testing.T) {
 }
 
 func TestURLService_ShortenURL_AttemptsExceeded(t *testing.T) {
+	flags := config.Flags{
+		FlagDBDSN: "postgres://test:test@127.0.0.1:5432/test?sslmode=disable",
+	}
+
+	zapLogger, _ := zap.NewProduction()
+	defer zapLogger.Sync()
+
+	ctx := context.Background()
+	txm := db.Parse(ctx, flags.FlagDBDSN, zapLogger)
 	mockRepo := new(MockURLRepository)
-	service := NewURLService(mockRepo)
+	service := NewURLService(mockRepo, txm)
 
 	targetURL := "https://yandex.ru"
 
 	// Симулируем жесткую коллизию: все 10 раз Find возвращает существующий URL
 	mockRepo.On("Find", mock.AnythingOfType("string")).Return("https://existing.com", nil).Times(10)
 
-	key, err := service.ShortenURL(targetURL, "")
+	key, err := service.ShortenURL(ctx, targetURL, "")
 
 	assert.Empty(t, key)
 	assert.Error(t, err)
@@ -96,8 +127,17 @@ func TestURLService_ShortenURL_AttemptsExceeded(t *testing.T) {
 }
 
 func TestURLService_ShortenURL_RepoFindError(t *testing.T) {
+	flags := config.Flags{
+		FlagDBDSN: "postgres://test:test@127.0.0.1:5432/test?sslmode=disable",
+	}
+
+	zapLogger, _ := zap.NewProduction()
+	defer zapLogger.Sync()
+
+	ctx := context.Background()
+	txm := db.Parse(ctx, flags.FlagDBDSN, zapLogger)
 	mockRepo := new(MockURLRepository)
-	service := NewURLService(mockRepo)
+	service := NewURLService(mockRepo, txm)
 
 	targetURL := "https://yandex.ru"
 	dbErr := errors.New("connection timeout")
@@ -105,7 +145,7 @@ func TestURLService_ShortenURL_RepoFindError(t *testing.T) {
 	// Симулируем критическую ошибку БД при поиске ключа
 	mockRepo.On("Find", mock.AnythingOfType("string")).Return("", dbErr).Once()
 
-	key, err := service.ShortenURL(targetURL, "")
+	key, err := service.ShortenURL(ctx, targetURL, "")
 
 	assert.Empty(t, key)
 	assert.Error(t, err)
@@ -114,8 +154,17 @@ func TestURLService_ShortenURL_RepoFindError(t *testing.T) {
 }
 
 func TestURLService_ShortenURL_RepoSaveError(t *testing.T) {
+	flags := config.Flags{
+		FlagDBDSN: "postgres://test:test@127.0.0.1:5432/test?sslmode=disable",
+	}
+
+	zapLogger, _ := zap.NewProduction()
+	defer zapLogger.Sync()
+
+	ctx := context.Background()
+	txm := db.Parse(ctx, flags.FlagDBDSN, zapLogger)
 	mockRepo := new(MockURLRepository)
-	service := NewURLService(mockRepo)
+	service := NewURLService(mockRepo, txm)
 
 	targetURL := "https://yandex.ru"
 	dbErr := errors.New("write permission denied")
@@ -124,7 +173,7 @@ func TestURLService_ShortenURL_RepoSaveError(t *testing.T) {
 	mockRepo.On("Find", mock.AnythingOfType("string")).Return("", repository.ErrNotFound).Once()
 	mockRepo.On("Save", mock.AnythingOfType("string"), targetURL).Return(dbErr).Once()
 
-	key, err := service.ShortenURL(targetURL, "")
+	key, err := service.ShortenURL(ctx, targetURL, "")
 
 	assert.Empty(t, key)
 	assert.Error(t, err)
@@ -133,15 +182,24 @@ func TestURLService_ShortenURL_RepoSaveError(t *testing.T) {
 }
 
 func TestURLService_GetURL_Success(t *testing.T) {
+	flags := config.Flags{
+		FlagDBDSN: "postgres://test:test@127.0.0.1:5432/test?sslmode=disable",
+	}
+
+	zapLogger, _ := zap.NewProduction()
+	defer zapLogger.Sync()
+
+	ctx := context.Background()
+	txm := db.Parse(ctx, flags.FlagDBDSN, zapLogger)
 	mockRepo := new(MockURLRepository)
-	service := NewURLService(mockRepo)
+	service := NewURLService(mockRepo, txm)
 
 	expectedKey := "aB3dE6"
 	expectedURL := "https://yandex.ru"
 
 	mockRepo.On("Find", expectedKey).Return(expectedURL, nil).Once()
 
-	url, err := service.GetURL(expectedKey)
+	url, err := service.GetURL(ctx, expectedKey)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expectedURL, url)
@@ -149,14 +207,23 @@ func TestURLService_GetURL_Success(t *testing.T) {
 }
 
 func TestURLService_GetURL_NotFound(t *testing.T) {
+	flags := config.Flags{
+		FlagDBDSN: "postgres://test:test@127.0.0.1:5432/test?sslmode=disable",
+	}
+
+	zapLogger, _ := zap.NewProduction()
+	defer zapLogger.Sync()
+
+	ctx := context.Background()
+	txm := db.Parse(ctx, flags.FlagDBDSN, zapLogger)
 	mockRepo := new(MockURLRepository)
-	service := NewURLService(mockRepo)
+	service := NewURLService(mockRepo, txm)
 
 	expectedKey := "nonexistent"
 
 	mockRepo.On("Find", expectedKey).Return("", repository.ErrNotFound).Once()
 
-	url, err := service.GetURL(expectedKey)
+	url, err := service.GetURL(ctx, expectedKey)
 
 	assert.Empty(t, url)
 	assert.Error(t, err)
