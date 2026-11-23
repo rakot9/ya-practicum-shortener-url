@@ -3,11 +3,11 @@ package handler
 import (
 	"errors"
 	"github.com/go-chi/chi/v5"
-	"github.com/rakot9/ya-practicum-shortener-url/internal/config/db"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/service/txctx"
+	"go.uber.org/zap"
 	"io"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
@@ -16,19 +16,22 @@ import (
 type FlagEnv struct {
 	FlagRunAddr           string
 	FlagRunShorternerAddr string
+	FlagDBDSN             string
 }
 
 type Handler struct {
 	urlService *service.URLService
 	flagEnv    *FlagEnv
-	dbStruct   *db.DBStruct
+	txm        *txctx.TxManager
+	logger     *zap.Logger
 }
 
-func NewHandler(urlService *service.URLService, flagEnv *FlagEnv, dbStruct *db.DBStruct) *Handler {
+func NewHandler(urlService *service.URLService, flagEnv *FlagEnv, txm *txctx.TxManager, logger *zap.Logger) *Handler {
 	return &Handler{
 		urlService: urlService,
 		flagEnv:    flagEnv,
-		dbStruct:   dbStruct,
+		txm:        txm,
+		logger:     logger,
 	}
 }
 
@@ -58,7 +61,7 @@ func (h *Handler) MainPage(res http.ResponseWriter, req *http.Request) {
 
 	URLtoShorten := bodyText
 
-	key, err := h.urlService.ShortenURL(URLtoShorten, "")
+	key, err := h.urlService.ShortenURL(req.Context(), URLtoShorten, "")
 
 	isSetOriginalURLInStorage := false
 
@@ -68,7 +71,7 @@ func (h *Handler) MainPage(res http.ResponseWriter, req *http.Request) {
 		}
 
 		if errors.Is(err, service.ErrCountAttemptExceed) {
-			slog.Error("count attempt (10) exceed for generate key. URL", slog.Any("error", err))
+			h.logger.Error("count attempt (10) exceed for generate key. URL", zap.Error(err))
 			http.Error(res, "server error", http.StatusInternalServerError)
 			return
 		}
@@ -100,7 +103,7 @@ func (h *Handler) MainPage(res http.ResponseWriter, req *http.Request) {
 func (h *Handler) PageByID(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 
-	url, err := h.urlService.GetURL(id)
+	url, err := h.urlService.GetURL(req.Context(), id)
 
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
@@ -108,7 +111,7 @@ func (h *Handler) PageByID(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		slog.Error("error find key.", slog.Any("error", err))
+		h.logger.Error("error find key", zap.Error(err))
 
 		res.WriteHeader(http.StatusInternalServerError)
 		res.Write([]byte(http.StatusText(http.StatusInternalServerError)))
@@ -120,14 +123,28 @@ func (h *Handler) PageByID(res http.ResponseWriter, req *http.Request) {
 }
 
 func (h *Handler) PingDB(res http.ResponseWriter, req *http.Request) {
-	if err := h.dbStruct.Pool.Ping(h.dbStruct.Ctx); err != nil {
-		slog.Error("db not accessable", slog.Any("error", err))
 
-		res.WriteHeader(http.StatusInternalServerError)
-		res.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+	status := http.StatusOK
 
-		return
+	if h.flagEnv.FlagDBDSN == "" {
+		status = http.StatusOK
+	} else {
+		if h.txm.GetPool() == nil {
+			status = http.StatusInternalServerError
+		} else {
+			if err := h.txm.GetPool().Ping(req.Context()); err != nil {
+
+				h.logger.Error("db not accessable", zap.Error(err))
+
+				status = http.StatusInternalServerError
+
+				res.WriteHeader(status)
+				res.Write([]byte(http.StatusText(http.StatusInternalServerError)))
+
+				return
+			}
+		}
 	}
 
-	res.WriteHeader(http.StatusOK)
+	res.WriteHeader(status)
 }

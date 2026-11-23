@@ -11,12 +11,12 @@ func TestParseFlags(t *testing.T) {
 		expected Flags
 	}{
 		{
-			name: "Проверка дефолтныз значений",
+			name: "Проверка дефолтных значений",
 			args: []string{},
 			expected: Flags{
 				FlagRunAddr:           "localhost:8080",
 				FlagRunShorternerAddr: "http://localhost:8080",
-				FlagFileStoragePath:   "storage_shorten_url.txt",
+				FlagFileStoragePath:   "",
 			},
 		},
 		{
@@ -25,7 +25,7 @@ func TestParseFlags(t *testing.T) {
 			expected: Flags{
 				FlagRunAddr:           "localhost:8081",
 				FlagRunShorternerAddr: "http://localhost:8080",
-				FlagFileStoragePath:   "storage_shorten_url.txt",
+				FlagFileStoragePath:   "",
 			},
 		},
 		{
@@ -34,7 +34,7 @@ func TestParseFlags(t *testing.T) {
 			expected: Flags{
 				FlagRunAddr:           "localhost:8080",
 				FlagRunShorternerAddr: "http://localhost:8081",
-				FlagFileStoragePath:   "storage_shorten_url.txt",
+				FlagFileStoragePath:   "",
 			},
 		},
 		{
@@ -43,7 +43,7 @@ func TestParseFlags(t *testing.T) {
 			expected: Flags{
 				FlagRunAddr:           "localhost:8081",
 				FlagRunShorternerAddr: "http://localhost:8081",
-				FlagFileStoragePath:   "storage_shorten_url.txt",
+				FlagFileStoragePath:   "",
 			},
 		},
 	}
