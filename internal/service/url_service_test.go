@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/config/db"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/model"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -21,7 +22,7 @@ func (m *MockURLRepository) Find(ctx context.Context, key string) (string, error
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockURLRepository) Save(ctx context.Context, key string, url string, correlationID string) (string, error) {
+func (m *MockURLRepository) Save(ctx context.Context, key string, url string, correlationID string, userUUID string) (string, error) {
 	args := m.Called(key, url)
 	return key, args.Error(0)
 }
@@ -36,6 +37,19 @@ func (m *MockURLRepository) Close() error {
 
 func (m *MockURLRepository) GetLastUserId() (int, error) {
 	return 1, nil
+}
+
+func (r *MockURLRepository) FindUser(ctx context.Context, userUUID string) (*model.User, error) {
+	return nil, nil
+}
+
+func (r *MockURLRepository) FindOrCreateUser(ctx context.Context, uuid string, email string, password string) (*int, error) {
+
+	return nil, nil
+}
+
+func (r *MockURLRepository) FindUsersURLs(ctx context.Context, userUUID string) ([]model.Shortener, error) {
+	return nil, nil
 }
 
 func TestURLService_ShortenURL_Success(t *testing.T) {

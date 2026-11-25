@@ -65,3 +65,9 @@ go run . -d "postgres://velobos:test@127.0.0.1:5432/velobos?sslmode=disable"
 10 shortenertest -test.v -test.run=^TestIteration10$ -binary-path=cmd/shortener/shortener -source-path=. -server-port=8080 -file-storage-path=storage.txt -database-dsn "postgres://velobos:test@127.0.0.1:5432/velobos?sslmode=disable"
 
 11 shortenertest -test.v -test.run=^TestIteration11$ -binary-path=cmd/shortener/shortener -server-port=8080 -database-dsn "postgres://velobos:test@127.0.0.1:5432/velobos?sslmode=disable"
+
+12 shortenertest -test.v -test.run=^TestIteration12$ -binary-path=cmd/shortener/shortener -server-port=8080 -database-dsn "postgres://velobos:test@127.0.0.1:5432/velobos?sslmode=disable"
+
+13 shortenertest -test.v -test.run=^TestIteration13$ -binary-path=cmd/shortener/shortener -server-port=8080 -database-dsn "postgres://velobos:test@127.0.0.1:5432/velobos?sslmode=disable"
+
+14 shortenertest -test.v -test.run=^TestIteration14$ -binary-path=cmd/shortener/shortener -database-dsn "postgres://velobos:test@127.0.0.1:5432/velobos?sslmode=disable"

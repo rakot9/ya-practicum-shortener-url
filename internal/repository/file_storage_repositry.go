@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/model"
 )
 
 type FileStorage struct {
@@ -38,7 +39,7 @@ func NewFileStorgeRepository(configParams config.Flags) (*FileStorgeRepository, 
 	}, nil
 }
 
-func (r *FileStorgeRepository) Save(ctx context.Context, key string, URL string, correlationID string) (string, error) {
+func (r *FileStorgeRepository) Save(ctx context.Context, key string, URL string, correlationID string, userUUID string) (string, error) {
 	idV4 := uuid.New()
 
 	saveData := FileStorage{
@@ -139,4 +140,17 @@ func (r *FileStorgeRepository) Close() error {
 
 func (r *FileStorgeRepository) GetLastUserId() (int, error) {
 	return 1, nil
+}
+
+func (r *FileStorgeRepository) FindUsersURLs(ctx context.Context, userUUID string) ([]model.Shortener, error) {
+	return nil, nil
+}
+
+func (r *FileStorgeRepository) FindOrCreateUser(ctx context.Context, uuid string, email string, password string) (*int, error) {
+
+	return nil, nil
+}
+
+func (r *FileStorgeRepository) FindUser(ctx context.Context, userUUID string) (*model.User, error) {
+	return nil, nil
 }

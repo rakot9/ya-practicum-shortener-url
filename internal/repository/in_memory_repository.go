@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/config"
+	"github.com/rakot9/ya-practicum-shortener-url/internal/model"
 	"sync"
 )
 
@@ -24,7 +25,7 @@ func NewInMemoryRepository(configParams config.Flags) *InMemoryRepository {
 	}
 }
 
-func (r *InMemoryRepository) Save(ctx context.Context, key string, url string, correlationID string) (string, error) {
+func (r *InMemoryRepository) Save(ctx context.Context, key string, url string, correlationID string, userUUID string) (string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.store[key] = url
@@ -61,4 +62,17 @@ func (r *InMemoryRepository) Close() error {
 
 func (r *InMemoryRepository) GetLastUserId() (int, error) {
 	return 1, nil
+}
+
+func (r *InMemoryRepository) FindUsersURLs(ctx context.Context, userUUID string) ([]model.Shortener, error) {
+	return nil, nil
+}
+
+func (r *InMemoryRepository) FindOrCreateUser(ctx context.Context, uuid string, email string, password string) (*int, error) {
+
+	return nil, nil
+}
+
+func (r *InMemoryRepository) FindUser(ctx context.Context, userUUID string) (*model.User, error) {
+	return nil, nil
 }

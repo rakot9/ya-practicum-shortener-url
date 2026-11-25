@@ -2,15 +2,17 @@ package handler
 
 import (
 	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service/txctx"
 	"go.uber.org/zap"
-	"io"
-	"net/http"
-	"net/url"
-	"strings"
 )
 
 type FlagEnv struct {
@@ -20,7 +22,7 @@ type FlagEnv struct {
 }
 
 type Handler struct {
-	urlService *service.URLService
+	UrlService *service.URLService
 	flagEnv    *FlagEnv
 	txm        *txctx.TxManager
 	logger     *zap.Logger
@@ -28,7 +30,7 @@ type Handler struct {
 
 func NewHandler(urlService *service.URLService, flagEnv *FlagEnv, txm *txctx.TxManager, logger *zap.Logger) *Handler {
 	return &Handler{
-		urlService: urlService,
+		UrlService: urlService,
 		flagEnv:    flagEnv,
 		txm:        txm,
 		logger:     logger,
@@ -61,11 +63,12 @@ func (h *Handler) MainPage(res http.ResponseWriter, req *http.Request) {
 
 	URLtoShorten := bodyText
 
-	key, err := h.urlService.ShortenURL(req.Context(), URLtoShorten, "")
+	key, err := h.UrlService.ShortenURL(req.Context(), URLtoShorten, "")
 
 	isSetOriginalURLInStorage := false
 
 	if err != nil {
+		fmt.Printf("Handler.Main error: %v", err)
 		if errors.Is(err, service.ErrOriginalURLAlreadyExist) {
 			isSetOriginalURLInStorage = true
 		}
@@ -103,7 +106,7 @@ func (h *Handler) MainPage(res http.ResponseWriter, req *http.Request) {
 func (h *Handler) PageByID(res http.ResponseWriter, req *http.Request) {
 	id := chi.URLParam(req, "id")
 
-	url, err := h.urlService.GetURL(req.Context(), id)
+	url, err := h.UrlService.GetURL(req.Context(), id)
 
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {

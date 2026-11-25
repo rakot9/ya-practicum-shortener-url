@@ -14,6 +14,7 @@ func Router(h *handler.Handler, zapLogger *zap.Logger) chi.Router {
 	r.Use(chiMiddleware.StripSlashes)
 
 	// attach middleware
+	r.Use(shortenerMiddleware.EnsureUserCookieMiddleware(zapLogger))
 	r.Use(shortenerMiddleware.ZapLogger(zapLogger))
 	r.Use(shortenerMiddleware.GzipMiddleware)
 

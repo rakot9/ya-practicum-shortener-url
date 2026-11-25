@@ -17,3 +17,5 @@ ADD CONSTRAINT fk_url_user
     ON DELETE CASCADE;
 
 CREATE INDEX idx_url_user_id ON shortener(user_id);
+
+CREATE UNIQUE INDEX idx_uq_users_uuid ON users(uuid);

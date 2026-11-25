@@ -5,12 +5,14 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"math/big"
+	"net/url"
+
+	"github.com/rakot9/ya-practicum-shortener-url/internal/ctxkey"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/model"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/repository"
 	"github.com/rakot9/ya-practicum-shortener-url/internal/service/txctx"
 	"go.uber.org/zap"
-	"math/big"
-	"net/url"
 )
 
 const base62Alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -27,11 +29,13 @@ type BatchError struct {
 }
 
 type URLRepository interface {
-	Save(ctx context.Context, key string, url string, correlationID string) (string, error)
+	Save(ctx context.Context, key string, url string, correlationID string, userUUID string) (string, error)
 	Find(ctx context.Context, key string) (string, error)
 	FindByOriginalURL(ctx context.Context, URL string) (string, error)
 	Close() error
-	GetLastUserId() (int, error)
+	FindUsersURLs(ctx context.Context, userUUID string) ([]model.Shortener, error)
+	FindUser(ctx context.Context, userUUID string) (*model.User, error)
+	FindOrCreateUser(ctx context.Context, uuid string, email string, password string) (*int, error)
 }
 
 // URLService управляет бизнес-логикой генерации ключей и координирует работу с репозиторием.
@@ -73,7 +77,15 @@ func (s *URLService) ShortenURL(ctx context.Context, url string, correlationID s
 		_, err = s.repo.Find(ctx, key)
 		if errors.Is(err, repository.ErrNotFound) {
 			// Ключ свободен, сохраняем и выходим из цикла
-			if key, err = s.repo.Save(ctx, key, url, correlationID); err != nil {
+
+			userUUID, ok := ctxkey.GetUserID(ctx)
+
+			if !ok {
+				return "", fmt.Errorf("failed to get userUUID from context: %w", err)
+			}
+
+			if key, err = s.repo.Save(ctx, key, url, correlationID, userUUID); err != nil {
+				fmt.Printf("Save error %v", err)
 				return "", fmt.Errorf("failed to save url: %w", err)
 			}
 			return key, nil
@@ -147,8 +159,38 @@ func (s *URLService) GetURL(ctx context.Context, key string) (string, error) {
 	return s.repo.Find(ctx, key)
 }
 
-func (s *URLService) GetUser() (int, error) {
-	return s.repo.GetLastUserId()
+func (s *URLService) GetUserURLs(ctx context.Context, domain string) ([]model.BatchResponseUserURLItem, error) {
+	userUUID, ok := ctxkey.GetUserID(ctx)
+
+	if !ok {
+		return nil, fmt.Errorf("failed to get userUUID from context")
+	}
+
+	userURLs, err := s.repo.FindUsersURLs(ctx, userUUID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var batchUserURLs []model.BatchResponseUserURLItem
+
+	for _, userURLValue := range userURLs {
+
+		url, err := url.JoinPath(domain, userURLValue.ShortURL)
+
+		if err != nil {
+			return nil, fmt.Errorf("join short url: %w", ErrBadRequest)
+		}
+
+		userURLItem := model.BatchResponseUserURLItem{
+			OriginalURL: userURLValue.OriginalURL,
+			ShortURL:    url,
+		}
+
+		batchUserURLs = append(batchUserURLs, userURLItem)
+	}
+
+	return batchUserURLs, nil
 }
 
 // Вспомогательный метод генерации ключа остался внутри сервиса, так как это бизнес-логика.
@@ -186,4 +228,8 @@ func (e *BatchError) Unwrap() error {
 		return nil
 	}
 	return e.Err
+}
+
+func (s *URLService) CreateUser(ctx context.Context, uuid string, email string, password string) (*int, error) {
+	return s.repo.FindOrCreateUser(ctx, uuid, email, password)
 }
